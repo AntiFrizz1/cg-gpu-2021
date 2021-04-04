@@ -132,7 +132,7 @@ float AverageLuminanceCalculator::process(Microsoft::WRL::ComPtr<ID3D11DeviceCon
     
     LARGE_INTEGER cur_time;
     QueryPerformanceCounter(&cur_time);
-    size_t time_delta = cur_time.QuadPart - m_last_time.QuadPart;
+    size_t time_delta = static_cast<size_t>(cur_time.QuadPart - m_last_time.QuadPart);
     m_last_time = cur_time;
     double delta = static_cast<double>(time_delta) / m_frequency.QuadPart;
 
