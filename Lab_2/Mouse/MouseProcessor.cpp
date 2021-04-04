@@ -23,27 +23,42 @@ void MouseProcessor::Process()
 			{
 				m_mouse_pressed = false;
 			}
+
+			auto& camera_position = m_graphics_ptr->RefWorldCameraPosition();
+			float& lon = camera_position.lon;
+			float& lat = camera_position.lat;
+			float& pos_x = camera_position.pos_x;
+			float& pos_y = camera_position.pos_y;
+			float& pos_z = camera_position.pos_z;
+			DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
+
 			if (mouse_event.GetType() == MouseEvent::EventType::WheelUp)
 			{
-				DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
-				view._41 -= view._13 * speed;
-				view._42 -= view._23 * speed;
-				view._43 -= view._33 * speed;
+				pos_z += speed;
+				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 			if (mouse_event.GetType() == MouseEvent::EventType::WheelDown)
 			{
-				DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
-				view._41 += view._13 * speed;
-				view._42 += view._23 * speed;
-				view._43 += view._33 * speed;
+				pos_z -= speed;
+				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 			if (m_mouse_pressed && mouse_event.GetType() == MouseEvent::EventType::RAW_MODE)
 			{
 				int dx = mouse_event.GetPosX();
 				int dy = mouse_event.GetPosY();
-				DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
-				view *= DirectX::XMMatrixRotationY(-dx / 100.f);
-				view *= DirectX::XMMatrixRotationX(-dy / 100.f);
+
+				lon += (float)dx / 100.f;
+				lat += (float)dy / 100.f;
+
+				if (lat <= -(float)DirectX::XM_PI / 2)
+				{
+					lat = -(float)DirectX::XM_PI / 2;
+				}
+				if (lat >= (float)DirectX::XM_PI / 2)
+				{
+					lat = (float)DirectX::XM_PI / 2;
+				}
+				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 		}
 	}

@@ -19,34 +19,34 @@ void KeyboardProcessor::Process()
 			std::wstring annotation_message = L"Start keyboard event " + key_event.GetKeyCode();
 			annotation_message += L"'";
 			Global::GetAnnotation().BeginEvent(annotation_message.c_str());
+
+			auto& camera_position = m_graphics_ptr->RefWorldCameraPosition();
+			float& lon = camera_position.lon;
+			float& lat = camera_position.lat;
+			float& pos_x = camera_position.pos_x;
+			float& pos_y = camera_position.pos_y;
+			float& pos_z = camera_position.pos_z;
+			DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
+
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'W')
 			{
-				DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
-				view._41 -= view._12 * speed;
-				view._42 -= view._22 * speed;
-				view._43 -= view._32 * speed;
+				pos_y += speed;
+				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'S')
 			{
-				DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
-				view._41 += view._12 * speed;
-				view._42 += view._22 * speed;
-				view._43 += view._32 * speed;
+				pos_y -= speed;
+				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
-
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'A')
 			{
-				DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
-				view._41 += view._11 * speed;
-				view._42 += view._21 * speed;
-				view._43 += view._31 * speed;
+				pos_x -= speed;
+				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'D')
 			{
-				DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
-				view._41 -= view._11 * speed;
-				view._42 -= view._21 * speed;
-				view._43 -= view._31 * speed;
+				pos_x += speed;
+				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 
 			if (key_event.IsPress() && key_event.GetKeyCode() == '1')

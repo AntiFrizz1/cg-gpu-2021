@@ -22,8 +22,8 @@ public:
 	DirectX::XMMATRIX& RefWorld() { return m_world1; }
 	DirectX::XMMATRIX& RefView() { return m_view; }
 	DirectX::XMMATRIX& RefProjection() { return m_projection; }
-	DirectX::XMFLOAT4& RefPos() { return m_pos; }
 	CameraPosition& RefCamera() { return m_camera; }
+	WorldCameraPosition& RefWorldCameraPosition() { return m_camera_position; }
 	
 	void ChangeLightsIntencity(size_t ind);
 	void ChangeToneMaping() { m_tone_maping_enable ^= true; }
@@ -64,11 +64,10 @@ private:
 	D3D11_VIEWPORT       m_viewport;
 	DirectX::XMMATRIX m_translation;
 	DirectX::XMMATRIX m_world1;
-	DirectX::XMMATRIX m_world2;
 	DirectX::XMMATRIX m_view;
 	DirectX::XMMATRIX m_projection;
-	DirectX::XMFLOAT4 m_pos;
 	CameraPosition m_camera;
+	WorldCameraPosition m_camera_position;
 	bool m_tone_maping_enable{ true };
 	size_t m_width;
 	size_t m_height;
