@@ -26,17 +26,9 @@ float4 main(PS_INPUT input) : SV_TARGET
     {
         float intensity = vLightIntensity[i].x;
         float4 curColor = float4(0.0f, 0.0f, 0.0f, vLightColor[i].a);
-        float specTerm = 0;
         float3 dirToLight = normalize(vLightDir[i].xyz - input.WorldPos.xyz);
-        float3 V = normalize(Eye.xyz - input.WorldPos);
-        float3 L = -normalize(vLightDir[i].xyz);
-        float3 R = reflect(normalize(L), normalize(input.Norm));
-        if (dot(R, V) >= 0)
-        {
-            specTerm = pow(dot(R, V), 200);
-        }
         float diffuseTerm = pow(saturate(dot(dirToLight, input.Norm)), 100);
-        curColor = (diffuseTerm + specTerm) * vLightColor[i] * intensity;
+        curColor = diffuseTerm * vLightColor[i] * intensity;
     
         finalColor += curColor;
     }
