@@ -84,6 +84,9 @@
     <ClCompile Include="Graphics\Sphere.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Graphics\DDSTextureLoader.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h">
@@ -155,6 +158,9 @@
     <ClInclude Include="Mouse\MouseProcessor.h">
       <Filter>Mouse</Filter>
     </ClInclude>
+    <ClInclude Include="Graphics\DDSTextureLoader.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="vertexshader.hlsl" />
@@ -164,5 +170,14 @@
     <FxCompile Include="luminancepixelshader.hlsl" />
     <FxCompile Include="colorpixelshader.hlsl" />
     <FxCompile Include="colorvertexshader.hlsl" />
+    <FxCompile Include="envpixelshader.hlsl">
+      <Filter>Исходные файлы</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="texture.jpg">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="texture.dds" />
   </ItemGroup>
 </Project>

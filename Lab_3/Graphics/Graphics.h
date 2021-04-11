@@ -38,17 +38,21 @@ private:
 	bool initialize_lights();
 	bool update_texture();
 
-	Microsoft::WRL::ComPtr<ID3D11Device>           m_device_ptr;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext>    m_device_context_ptr;
-	Microsoft::WRL::ComPtr<IDXGISwapChain>         m_swap_chain_ptr;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_render_taget_view_ptr;
-
+	Microsoft::WRL::ComPtr<ID3D11Device>             m_device_ptr;
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext>      m_device_context_ptr;
+	Microsoft::WRL::ComPtr<IDXGISwapChain>           m_swap_chain_ptr;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   m_render_taget_view_ptr;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_texture_resource_view;
+	Microsoft::WRL::ComPtr< ID3D11SamplerState>      m_sampler_linear;
 	ToneMaping m_tone_maping;
 	RenderInTexture m_render_in_texture{ DXGI_FORMAT_R32G32B32A32_FLOAT };
 	VertexShader m_vertex_shader;
 	PixelShader  m_pixel_shader;
+	PixelShader  m_env_pixel_shader;
 	
 	Sphere m_sphere;
+	std::vector<Vertex> m_sphere_vertex;
+	std::vector<WORD> m_sphere_indicies;
 
 	DirectX::XMFLOAT4 m_vLightDirs[NUM_OF_LIGHT];
 	DirectX::XMFLOAT4 m_vLightColors[NUM_OF_LIGHT];

@@ -13,7 +13,7 @@ bool Sphere::Initialize(Microsoft::WRL::ComPtr<ID3D11Device> device)
 
 void Sphere::MoveVertexes(DirectX::XMFLOAT3 direction)
 {
-	for (auto& [position, _] : m_sphere_vertex)
+	for (auto& [position, _, tmp] : m_sphere_vertex)
 	{
 		position.x += direction.x;
 		position.y += direction.y;

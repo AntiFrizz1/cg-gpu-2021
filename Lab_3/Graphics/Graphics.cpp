@@ -1,6 +1,7 @@
 #include "Graphics.h"
 #include "../WinErrorLoger.h"
 #include "../Global.h"
+#include "DDSTextureLoader.h"
 
 bool Graphics::Initialize(HWND hwnd, size_t width, size_t height)
 {
@@ -81,26 +82,32 @@ void Graphics::RenderFrame()
 
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	/*m_device_context_ptr->IASetVertexBuffers(0, 1, m_vertex_buffer.GetAddressOf(), &stride, &offset);
-	m_device_context_ptr->IASetIndexBuffer(m_index_buffer.Get(), DXGI_FORMAT_R16_UINT, 0);*/
-	m_device_context_ptr->IASetVertexBuffers(0, 1, m_sphere.GetAddressOfVertexBuffer(), &stride, &offset);
-	m_device_context_ptr->IASetIndexBuffer(m_sphere.GetIndexBuffer(), DXGI_FORMAT_R16_UINT, 0);
+	m_device_context_ptr->IASetVertexBuffers(0, 1, m_vertex_buffer.GetAddressOf(), &stride, &offset);
+	m_device_context_ptr->IASetIndexBuffer(m_index_buffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
 	m_device_context_ptr->VSSetShader(m_vertex_shader.GetShaderPtr(), NULL, 0);
 	m_device_context_ptr->VSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
-	m_device_context_ptr->PSSetShader(m_pixel_shader.GetShaderPtr(), NULL, 0);
+	m_device_context_ptr->PSSetShader(m_env_pixel_shader.GetShaderPtr(), NULL, 0);
 	m_device_context_ptr->PSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
+	m_device_context_ptr->PSSetShaderResources(0, 1, m_texture_resource_view.GetAddressOf());
+	m_device_context_ptr->PSSetSamplers(0, 1, m_sampler_linear.GetAddressOf());
+	m_device_context_ptr->DrawIndexed(m_sphere_indicies.size(), 0, 0);
 
-	size_t spheres = 5;
-	for (size_t i = 0; i < spheres; ++i)
+	m_device_context_ptr->PSSetShader(m_pixel_shader.GetShaderPtr(), NULL, 0);
+	int spheres = 9;
+	for (int i = 0; i < spheres; ++i)
 	{
-		for (size_t j = 0; j < spheres; ++j)
+		for (int j = 0; j < spheres; ++j)
 		{
 			cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(
-				i * Sphere::RADIUS * 3,
-				j * Sphere::RADIUS * 3,
+				(i - spheres / 2) * Sphere::RADIUS * 3,
+				(j - spheres / 2) * Sphere::RADIUS * 3,
 				0
 			));
+			cb.metalness = static_cast<float>(j) / (spheres - 1);
+			cb.roughness = static_cast<float>(i) / (spheres - 1);
+			m_device_context_ptr->IASetVertexBuffers(0, 1, m_sphere.GetAddressOfVertexBuffer(), &stride, &offset);
+			m_device_context_ptr->IASetIndexBuffer(m_sphere.GetIndexBuffer(), DXGI_FORMAT_R16_UINT, 0);
 			m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
 			m_device_context_ptr->DrawIndexed(m_sphere.GetIniciesSize(), 0, 0);
 		}
@@ -178,7 +185,7 @@ bool Graphics::initialize_directx(HWND hwnd, size_t width, size_t height)
 	}
 
 	HRESULT hr = D3D11CreateDeviceAndSwapChain(
-		adapters[0].adapter_pointer, // adapter pointer
+		adapters[1].adapter_pointer, // adapter pointer
 		D3D_DRIVER_TYPE_UNKNOWN,
 		NULL, // For softfare driver
 		create_device_flags, // flags for runtime layers
@@ -251,6 +258,7 @@ bool Graphics::initilize_shaders()
 	{
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA}
 	};
 
 	UINT num_elements = ARRAYSIZE(layout);
@@ -265,31 +273,166 @@ bool Graphics::initilize_shaders()
 		return false;
 	}
 
+	if (!m_env_pixel_shader.Initialize(m_device_ptr, L"envpixelshader.cso"))
+	{
+		return false;
+	}
+
 	return true;
 }
 
 bool Graphics::initilize_scene()
 {
 	using namespace DirectX;
-	Vertex vertices[] =
-	{
-		{ XMFLOAT4(-10.0f, -10.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4(10.0f, -10.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4(10.0f, 10.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT4(-10.0f, 10.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+	static const float CUBE_SIZE = 50.0f;
+	//static const Vertex vertices[24] = {
+	//	// Bottom face
+	//	{{-CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {0,-1,0},  {0.25, 0.66}},
+	//	{{ CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {0,-1,0}, {0.5, 0.66}},
+	//	{{ CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.5, 1.0}},
+	//	{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.25, 1.0}},
+	//	// Right face
+	//	{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {0.25, 0}},
+	//	{{ CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {0.5, 0}},
+	//	{{ CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,1,0}, {0.5, 0.33}},
+	//	{{-CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,1,0}, {0.25, 0.33}},
+	//	// Front face
+	//	{{ CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {1,0,0},  {0.25, 0.33}},
+	//	{{ CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {1,0,0}, {0.5, 0.66}},
+	//	{{ CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {1,0,0}, {0.5, 0.33}},
+	//	{{ CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {1,0,0}, {0.25, 0.66}},
+	//	// Back face
+	//	{{-CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {-1,0,0}, {0.0f, 1.0f}},
+	//	{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {-1,0,0}, {1.0f, 1.0f}},
+	//	{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {-1,0,0}, {1.0f, 0.0f}},
+	//	{{-CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {-1,0,0}, {1.0f, 0.0f}},
+	//	// Left face
+	//	{{ CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {0,0,1}, {0.0f, 1.0f}},
+	//	{{-CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {0,0,1}, {1.0f, 1.0f}},
+	//	{{-CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,0,1}, {1.0f, 0.0f}},
+	//	{{ CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,0,1}, {0.0f, 0.0f}},
+	//	// Top face
+	//	{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,0,-1}, {0.0f, 1.0f}},
+	//	{{ CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,0,-1}, {1.0f, 1.0f}},
+	//	{{ CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,0,-1}, {1.0f, 0.0f}},
+	//	{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,0,-1}, {0.0f, 0.0f}},
+	//};
+	//static const WORD indices[] = {
+	//	1, 2, 0, 
+	//	2, 3, 0,
+	//	5, 6, 4, 
+	//	6, 7, 4,
+	//	9, 10, 8, 
+	//	10, 11, 8,
+	//	13, 14, 12, 
+	//	14, 15, 12,
+	//	17, 18, 16, 
+	//	18, 19, 16,
+	//	21, 22, 20, 
+	//	22, 23, 20
+	//};
+	/*constexpr float trunc_1_3 = 1.0f / 3.0f;
+	constexpr float trunc_2_3 = 2.0f / 3.0f;
+	static const Vertex vertices[14] = {
+		{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {0.25, 0}},
+		{{ CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {0.5, 0}},
+		{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {0.0, trunc_1_3}},
+		{{-CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,1,0}, {0.25, trunc_1_3}},
+		{{ CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,1,0}, {0.5, trunc_1_3}},
+		{{ CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {1,0,0}, {0.75, trunc_1_3}},
+		{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {1.0, trunc_1_3}},
+		{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.0, trunc_2_3}},
+		{{-CUBE_SIZE, -CUBE_SIZE, CUBE_SIZE, 1}, {0,-1,0}, {0.25, trunc_2_3}},
+		{{ CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {0,-1,0}, {0.5, trunc_2_3}},
+		{{ CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.75, trunc_2_3}},
+		{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {1.00, trunc_2_3}},
+		{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.25, 1.0}},
+		{{ CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.5, 1.0}},
+
 	};
+	static const WORD indices[] = {
+		0, 1, 4,
+		0, 4, 3,
+		2, 3, 8,
+		2, 8, 7,
+		3, 4, 9,
+		3, 9, 8,
+		4, 5, 10,
+		4, 10, 9,
+		5, 6, 11,
+		5, 11, 10,
+		8, 9, 13,
+		8, 13, 12
+	};*/
+	DirectX::XMFLOAT3 m_position{ 0.0f, 0.0f, 0.0f };
+	static size_t constexpr SPHERE_PARTS = 100;
+	static float constexpr RADIUS = 50.f;
+	using namespace DirectX;
+	float delta_tetha = DirectX::XM_PI / SPHERE_PARTS; //thetta
+	float delta_phi = 2 * DirectX::XM_PI / SPHERE_PARTS;
+	size_t layer = 0;
+	size_t cur_layer_size = 0;
+	size_t prev_layer_size = 0;
+	float tetha = 0;
+	for (; layer <= SPHERE_PARTS; tetha += delta_tetha, ++layer)
+	{
+		prev_layer_size = cur_layer_size;
+
+		if (tetha > DirectX::XM_PI)
+		{
+			tetha = DirectX::XM_PI;
+		}
+		cur_layer_size = SPHERE_PARTS + 1;
+		int ind = 0;
+		for (float phi = 0; phi < 2 * DirectX::XM_PI; phi += delta_phi)
+		{
+			float n_x = sin(tetha) * sin(phi);
+			float n_y = cos(tetha);
+			float n_z = sin(tetha) * cos(phi);
+			float x = RADIUS * n_x + m_position.x;
+			float y = RADIUS * n_y + m_position.y;
+			float z = RADIUS * n_z + m_position.z;
+			m_sphere_vertex.push_back({ XMFLOAT4(x, y, z, 1.0f), XMFLOAT3(n_x, n_y, n_z), XMFLOAT2(static_cast<float>(ind) / (SPHERE_PARTS), static_cast<float>(layer) / (SPHERE_PARTS-1)) });
+			++ind;
+		}
+		{
+			float n_x = sin(tetha) * sin(0.0f);
+			float n_y = cos(tetha);
+			float n_z = sin(tetha) * cos(0.0f);
+			float x = RADIUS * n_x + m_position.x;
+			float y = RADIUS * n_y + m_position.y;
+			float z = RADIUS * n_z + m_position.z;
+			m_sphere_vertex.push_back({ XMFLOAT4(x, y, z, 1.0f), XMFLOAT3(n_x, n_y, n_z), XMFLOAT2(static_cast<float>(ind) / (SPHERE_PARTS), static_cast<float>(layer) / (SPHERE_PARTS - 1)) });
+		}
+		if (layer > 0)
+		{
+			size_t cur_layer_start = m_sphere_vertex.size() - cur_layer_size;
+			size_t prev_layer_start = cur_layer_start - prev_layer_size;
+			for (size_t i = 0; i < SPHERE_PARTS; ++i)
+			{
+				m_sphere_indicies.push_back(cur_layer_start + i + 1);
+				m_sphere_indicies.push_back(cur_layer_start + i);
+				m_sphere_indicies.push_back(prev_layer_start + i);
+				
+				m_sphere_indicies.push_back(prev_layer_start + i + 1);
+				m_sphere_indicies.push_back(cur_layer_start + i + 1);
+				m_sphere_indicies.push_back(prev_layer_start + i);
+			}
+
+		}
+	}
 
 	D3D11_BUFFER_DESC vertex_buffer_desc;
 	ZeroMemory(&vertex_buffer_desc, sizeof(vertex_buffer_desc));
 
 	vertex_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-	vertex_buffer_desc.ByteWidth = sizeof(Vertex) * ARRAYSIZE(vertices);
+	vertex_buffer_desc.ByteWidth = sizeof(Vertex) * m_sphere_vertex.size();
 	vertex_buffer_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertex_buffer_desc.CPUAccessFlags = 0;
 
 	D3D11_SUBRESOURCE_DATA vertex_buffer_data;
 	ZeroMemory(&vertex_buffer_data, sizeof(vertex_buffer_data));
-	vertex_buffer_data.pSysMem = vertices;
+	vertex_buffer_data.pSysMem = m_sphere_vertex.data();
 
 	HRESULT hr = m_device_ptr->CreateBuffer(&vertex_buffer_desc, &vertex_buffer_data, m_vertex_buffer.GetAddressOf());
 	if (FAILED(hr))
@@ -298,22 +441,17 @@ bool Graphics::initilize_scene()
 		return false;
 	}
 
-	WORD indices[] =
-	{
-		3,1,0,
-		2,1,3,
-	};
 
 	D3D11_BUFFER_DESC index_buffer_desc;
 	ZeroMemory(&index_buffer_desc, sizeof(index_buffer_desc));
 	index_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
-	index_buffer_desc.ByteWidth = sizeof(WORD) * ARRAYSIZE(indices);
+	index_buffer_desc.ByteWidth = sizeof(WORD) * m_sphere_indicies.size();
 	index_buffer_desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	index_buffer_desc.CPUAccessFlags = 0;
 
 	D3D11_SUBRESOURCE_DATA index_sub_data;
 	ZeroMemory(&index_sub_data, sizeof(index_sub_data));
-	index_sub_data.pSysMem = indices;
+	index_sub_data.pSysMem = m_sphere_indicies.data();
 	
 	hr = m_device_ptr->CreateBuffer(&index_buffer_desc, &index_sub_data, m_index_buffer.GetAddressOf());
 	if (FAILED(hr))
@@ -340,6 +478,24 @@ bool Graphics::initilize_scene()
 	m_view = DirectX::XMMatrixLookAtLH(m_camera.eye, m_camera.at, m_camera.up);
 	m_projection = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV2, m_width / (FLOAT)m_height, 0.01f, 100.0f);
 
+	hr = CreateDDSTextureFromFile(m_device_ptr.Get(), L"texture.dds", nullptr, m_texture_resource_view.GetAddressOf());
+	if (FAILED(hr))
+		return false;
+
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	hr = m_device_ptr->CreateSamplerState(&sampDesc, m_sampler_linear.GetAddressOf());
+	if (FAILED(hr))
+		return false;
+
+
 	return true;
 }
 
@@ -350,13 +506,13 @@ bool Graphics::initialize_lights()
 	// Setup our lighting parameters
 	XMFLOAT4 vLightDirs[NUM_OF_LIGHT] =
 	{
-		XMFLOAT4(-a, 0.0f, -10.0f, 1.0f),
+		XMFLOAT4(0, 0.0f, -50.0f, 1.0f),
 		XMFLOAT4(a, 0.0f, -10.0f, 1.0f),
 		XMFLOAT4(0.0f, static_cast<float>(5 * a * sin(60)), -10.0f, 1.0f),
 	};
 	XMFLOAT4 vLightColors[NUM_OF_LIGHT] =
 	{
-		XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),
+		XMFLOAT4(1.0f, 0.5f, 0.0f, 1.0f),
 		XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),
 		XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
 	};

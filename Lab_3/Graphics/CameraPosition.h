@@ -2,7 +2,7 @@
 
 #include <DirectXMath.h>
 
-DirectX::XMFLOAT3 constexpr EYE{ 0.0f, 0.0f, -15.0f };
+DirectX::XMFLOAT3 constexpr EYE{ 0.0f, 0.0f, -10.0f };
 DirectX::XMFLOAT3 constexpr AT{ 0.0f, 0.0f, 1.0f };
 DirectX::XMFLOAT3 constexpr UP{ 0.0f, 1.0f, 0.0f };
 
