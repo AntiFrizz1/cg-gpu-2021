@@ -63,7 +63,24 @@ void KeyboardProcessor::Process()
 			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == '4')
 			{
-				m_graphics_ptr->ChangeToneMaping();
+				m_graphics_ptr->SwitchToneMaping();
+			}
+			if (key_event.IsPress() && key_event.GetKeyCode() == '5')
+			{
+				m_graphics_ptr->SetPbrShaderType(PbrShaderType::BRDF);
+			}
+			if (key_event.IsPress() && key_event.GetKeyCode() == '6')
+			{
+				m_graphics_ptr->SetPbrShaderType(PbrShaderType::NDF);
+			}
+			if (key_event.IsPress() && key_event.GetKeyCode() == '7')
+			{
+				m_graphics_ptr->SetPbrShaderType(PbrShaderType::GEOMETRY);
+			}
+			if (key_event.IsPress() && key_event.GetKeyCode() == '8')
+			{
+				m_graphics_ptr->SetPbrShaderType(PbrShaderType::FRESNEL);
+				m_graphics_ptr->SetToneMaping(false);
 			}
 			Global::GetAnnotation().EndEvent();
 		}

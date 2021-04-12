@@ -93,20 +93,33 @@ void Graphics::RenderFrame()
 	m_device_context_ptr->PSSetSamplers(0, 1, m_sampler_linear.GetAddressOf());
 	m_device_context_ptr->DrawIndexed(m_sphere_indicies.size(), 0, 0);
 
-	m_device_context_ptr->PSSetShader(m_pixel_shader.GetShaderPtr(), NULL, 0);
-	int spheres = 9;
-	
-	for (int i = 0; i < spheres; ++i)
+	switch (m_cur_pbr_shader_type)
 	{
-		for (int j = 0; j < spheres; ++j)
+	case PbrShaderType::BRDF:
+		m_device_context_ptr->PSSetShader(m_brdf_pixel_shader.GetShaderPtr(), NULL, 0);
+		break;
+	case PbrShaderType::NDF:
+		m_device_context_ptr->PSSetShader(m_ndf_pixel_shader.GetShaderPtr(), NULL, 0);
+		break;
+	case PbrShaderType::GEOMETRY:
+		m_device_context_ptr->PSSetShader(m_geometry_pixel_shader.GetShaderPtr(), NULL, 0);
+		break;
+	case PbrShaderType::FRESNEL:
+		m_device_context_ptr->PSSetShader(m_fresnel_pixel_shader.GetShaderPtr(), NULL, 0);
+	}
+
+	int constexpr SPHERES_COUNT = 9;
+	for (int i = 0; i < SPHERES_COUNT; ++i)
+	{
+		for (int j = 0; j < SPHERES_COUNT; ++j)
 		{
 			cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(
-				(i - spheres / 2) * Sphere::RADIUS * 3,
-				(j - spheres / 2) * Sphere::RADIUS * 3,
+				(i - SPHERES_COUNT / 2) * Sphere::RADIUS * 3,
+				(j - SPHERES_COUNT / 2) * Sphere::RADIUS * 3,
 				0
 			));
-			cb.metalness = static_cast<float>(j) / (spheres - 1);
-			cb.roughness = static_cast<float>(i) / (spheres - 1);
+			cb.metalness = static_cast<float>(j) / (SPHERES_COUNT - 1);
+			cb.roughness = static_cast<float>(i) / (SPHERES_COUNT - 1);
 			static const DirectX::XMFLOAT4 default_albedo = {0.95f, 0.64f, 0.54f, 1.0f};  // copper color
 			cb.albedo = default_albedo;
 			m_device_context_ptr->IASetVertexBuffers(0, 1, m_sphere.GetAddressOfVertexBuffer(), &stride, &offset);
@@ -132,19 +145,19 @@ void Graphics::RenderFrame()
 
 void Graphics::ChangeLightsIntencity(size_t ind)
 {
-	float constexpr MAX_INTENCITY_VALUE = 100.0f;
+	static constexpr float intencity_sequence[] = {1.0f, 10.0f, 100.0f, 0.0f, 0.5f};
+	static constexpr size_t INTENCITY_SEQUENCE_SIZE = sizeof(intencity_sequence) / sizeof(float);
+
 	if (ind < NUM_OF_LIGHT)
 	{
-		m_vLightIntencitys[ind] *= 10.0f;
-		if (m_vLightIntencitys[ind] > MAX_INTENCITY_VALUE)
-		{
-			m_vLightIntencitys[ind] = 1.0f;
-		}
+		++m_vLightIntencityIndex[ind];
+		m_vLightIntencityIndex[ind] %= INTENCITY_SEQUENCE_SIZE;
+		m_vLightIntencitys[ind] = intencity_sequence[m_vLightIntencityIndex[ind]];
 	}
 }
 
 bool Graphics::initialize_directx(HWND hwnd, size_t width, size_t height)
-{
+{ 
 	std::vector<AdapterData> adapters = AdapterReader::GetAdapters();
 
 	if (adapters.size() < 1)
@@ -237,21 +250,6 @@ bool Graphics::initialize_directx(HWND hwnd, size_t width, size_t height)
 	viewport.MaxDepth = 1;
 
 	m_device_context_ptr->RSSetViewports(1, &viewport);
-
-	// Create rasterizer stae
-
-	D3D11_RASTERIZER_DESC rasterizer_desc;
-	ZeroMemory(&rasterizer_desc, sizeof(D3D11_RASTERIZER_DESC));
-
-	rasterizer_desc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-	rasterizer_desc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
-	hr = m_device_ptr->CreateRasterizerState(&rasterizer_desc, m_rasterizer_state.GetAddressOf());
-	if (FAILED(hr))
-	{
-		utils::WinErrorLogger::Log(hr, "Failed to create rasterizer state.");
-		return false;
-	}
-
 	return true;
 }
 
@@ -271,7 +269,22 @@ bool Graphics::initilize_shaders()
 		return false;
 	}
 
-	if (!m_pixel_shader.Initialize(m_device_ptr, L"pixelshader.cso"))
+	if (!m_brdf_pixel_shader.Initialize(m_device_ptr, L"brdfpixelshader.cso"))
+	{
+		return false;
+	}
+
+	if (!m_geometry_pixel_shader.Initialize(m_device_ptr, L"geometrypixelshader.cso"))
+	{
+		return false;
+	}
+
+	if (!m_ndf_pixel_shader.Initialize(m_device_ptr, L"ndfpixelshader.cso"))
+	{
+		return false;
+	}
+
+	if (!m_fresnel_pixel_shader.Initialize(m_device_ptr, L"fresnelpixelshader.cso"))
 	{
 		return false;
 	}
@@ -287,86 +300,6 @@ bool Graphics::initilize_shaders()
 bool Graphics::initilize_scene()
 {
 	using namespace DirectX;
-	static const float CUBE_SIZE = 50.0f;
-	//static const Vertex vertices[24] = {
-	//	// Bottom face
-	//	{{-CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {0,-1,0},  {0.25, 0.66}},
-	//	{{ CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {0,-1,0}, {0.5, 0.66}},
-	//	{{ CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.5, 1.0}},
-	//	{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.25, 1.0}},
-	//	// Right face
-	//	{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {0.25, 0}},
-	//	{{ CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {0.5, 0}},
-	//	{{ CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,1,0}, {0.5, 0.33}},
-	//	{{-CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,1,0}, {0.25, 0.33}},
-	//	// Front face
-	//	{{ CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {1,0,0},  {0.25, 0.33}},
-	//	{{ CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {1,0,0}, {0.5, 0.66}},
-	//	{{ CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {1,0,0}, {0.5, 0.33}},
-	//	{{ CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {1,0,0}, {0.25, 0.66}},
-	//	// Back face
-	//	{{-CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {-1,0,0}, {0.0f, 1.0f}},
-	//	{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {-1,0,0}, {1.0f, 1.0f}},
-	//	{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {-1,0,0}, {1.0f, 0.0f}},
-	//	{{-CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {-1,0,0}, {1.0f, 0.0f}},
-	//	// Left face
-	//	{{ CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {0,0,1}, {0.0f, 1.0f}},
-	//	{{-CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {0,0,1}, {1.0f, 1.0f}},
-	//	{{-CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,0,1}, {1.0f, 0.0f}},
-	//	{{ CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,0,1}, {0.0f, 0.0f}},
-	//	// Top face
-	//	{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,0,-1}, {0.0f, 1.0f}},
-	//	{{ CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,0,-1}, {1.0f, 1.0f}},
-	//	{{ CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,0,-1}, {1.0f, 0.0f}},
-	//	{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,0,-1}, {0.0f, 0.0f}},
-	//};
-	//static const WORD indices[] = {
-	//	1, 2, 0, 
-	//	2, 3, 0,
-	//	5, 6, 4, 
-	//	6, 7, 4,
-	//	9, 10, 8, 
-	//	10, 11, 8,
-	//	13, 14, 12, 
-	//	14, 15, 12,
-	//	17, 18, 16, 
-	//	18, 19, 16,
-	//	21, 22, 20, 
-	//	22, 23, 20
-	//};
-	/*constexpr float trunc_1_3 = 1.0f / 3.0f;
-	constexpr float trunc_2_3 = 2.0f / 3.0f;
-	static const Vertex vertices[14] = {
-		{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {0.25, 0}},
-		{{ CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {0.5, 0}},
-		{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {0.0, trunc_1_3}},
-		{{-CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,1,0}, {0.25, trunc_1_3}},
-		{{ CUBE_SIZE,  CUBE_SIZE,  CUBE_SIZE, 1}, {0,1,0}, {0.5, trunc_1_3}},
-		{{ CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {1,0,0}, {0.75, trunc_1_3}},
-		{{-CUBE_SIZE,  CUBE_SIZE, -CUBE_SIZE, 1}, {0,1,0}, {1.0, trunc_1_3}},
-		{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.0, trunc_2_3}},
-		{{-CUBE_SIZE, -CUBE_SIZE, CUBE_SIZE, 1}, {0,-1,0}, {0.25, trunc_2_3}},
-		{{ CUBE_SIZE, -CUBE_SIZE,  CUBE_SIZE, 1}, {0,-1,0}, {0.5, trunc_2_3}},
-		{{ CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.75, trunc_2_3}},
-		{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {1.00, trunc_2_3}},
-		{{-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.25, 1.0}},
-		{{ CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE, 1}, {0,-1,0}, {0.5, 1.0}},
-
-	};
-	static const WORD indices[] = {
-		0, 1, 4,
-		0, 4, 3,
-		2, 3, 8,
-		2, 8, 7,
-		3, 4, 9,
-		3, 9, 8,
-		4, 5, 10,
-		4, 10, 9,
-		5, 6, 11,
-		5, 11, 10,
-		8, 9, 13,
-		8, 13, 12
-	};*/
 	DirectX::XMFLOAT3 m_position{ 0.0f, 0.0f, 0.0f };
 	static size_t constexpr SPHERE_PARTS = 100;
 	static float constexpr RADIUS = 50.f;
@@ -526,6 +459,7 @@ bool Graphics::initialize_lights()
 		m_vLightDirs[m] = vLightDirs[m];
 		m_vLightColors[m] = vLightColors[m];
 		m_vLightIntencitys[m] = vLightIntencitys[m];
+		m_vLightIntencityIndex[m] = 0;
 	}
 
 	return true;

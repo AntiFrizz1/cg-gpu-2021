@@ -15,6 +15,14 @@
 //#pragma comment (lib, "d3d11.lib")
 //#pragma comment (lib, "DirectXTK.lib")
 
+enum class PbrShaderType
+{
+	BRDF,
+	NDF,
+	GEOMETRY,
+	FRESNEL
+};
+
 class Graphics
 {
 public:
@@ -27,9 +35,11 @@ public:
 	CameraPosition& RefCamera() { return m_camera; }
 	WorldCameraPosition& RefWorldCameraPosition() { return m_camera_position; }
 	void ChangeLightsIntencity(size_t ind);
-	void ChangeToneMaping() { m_tone_maping_enable ^= true; }
-
+	void SetToneMaping(bool enable) { m_tone_maping_enable = enable; }
+	void SwitchToneMaping() { m_tone_maping_enable ^= true; }
+	void SetPbrShaderType(PbrShaderType type) { m_cur_pbr_shader_type = type; }
 	bool OnResizeWindow(size_t width, size_t height);
+
 private:
 	bool initialize_directx(HWND hwnd, size_t width, size_t height);
 	bool initilize_shaders();
@@ -47,9 +57,14 @@ private:
 	ToneMaping m_tone_maping;
 	RenderInTexture m_render_in_texture{ DXGI_FORMAT_R32G32B32A32_FLOAT };
 	VertexShader m_vertex_shader;
-	PixelShader  m_pixel_shader;
 	PixelShader  m_env_pixel_shader;
-	
+
+	PixelShader m_brdf_pixel_shader;
+	PixelShader m_ndf_pixel_shader;
+	PixelShader m_geometry_pixel_shader;
+	PixelShader m_fresnel_pixel_shader;
+	PbrShaderType m_cur_pbr_shader_type{ PbrShaderType::BRDF };
+
 	Sphere m_sphere;
 	std::vector<Vertex> m_sphere_vertex;
 	std::vector<WORD> m_sphere_indicies;
@@ -57,20 +72,18 @@ private:
 	DirectX::XMFLOAT4 m_vLightDirs[NUM_OF_LIGHT];
 	DirectX::XMFLOAT4 m_vLightColors[NUM_OF_LIGHT];
 	float             m_vLightIntencitys[NUM_OF_LIGHT];
+	size_t            m_vLightIntencityIndex[NUM_OF_LIGHT];
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_vertex_buffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_index_buffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constant_buffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constant_buffer1;
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depth_stencil_state;
-	Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rasterizer_state;
+	
 	D3D11_VIEWPORT       m_viewport;
 	DirectX::XMMATRIX m_translation;
 	DirectX::XMMATRIX m_world1;
 	DirectX::XMMATRIX m_view;
 	DirectX::XMMATRIX m_projection;
+	
 	CameraPosition m_camera;
 	WorldCameraPosition m_camera_position;
 	bool m_tone_maping_enable{ true };

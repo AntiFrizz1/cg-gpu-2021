@@ -164,7 +164,6 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="vertexshader.hlsl" />
-    <FxCompile Include="pixelshader.hlsl" />
     <FxCompile Include="tonepixelshader.hlsl" />
     <FxCompile Include="tonevertexshader.hlsl" />
     <FxCompile Include="luminancepixelshader.hlsl" />
@@ -173,11 +172,18 @@
     <FxCompile Include="envpixelshader.hlsl">
       <Filter>Исходные файлы</Filter>
     </FxCompile>
+    <FxCompile Include="geometrypixelshader.hlsl" />
+    <FxCompile Include="fresnelpixelshader.hlsl" />
+    <FxCompile Include="brdfpixelshader.hlsl" />
+    <FxCompile Include="ndfpixelshader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="texture.jpg">
       <Filter>Файлы ресурсов</Filter>
     </Image>
     <Image Include="texture.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="commonshader.fx" />
   </ItemGroup>
 </Project>
