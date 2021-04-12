@@ -75,7 +75,7 @@ void Graphics::RenderFrame()
 		cb.vLightColor[m] = m_vLightColors[m];
 		cb.vLightIntencity[m] = DirectX::XMFLOAT4(m_vLightIntencitys[m], 0.0f, 0.0f, 0.0f);
 	}
-	DirectX::XMStoreFloat4(&cb.eye, m_camera.eye);
+	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
 
 	m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
 	m_device_context_ptr->IASetInputLayout(m_vertex_shader.GetInputLayoutPtr());
@@ -95,6 +95,7 @@ void Graphics::RenderFrame()
 
 	m_device_context_ptr->PSSetShader(m_pixel_shader.GetShaderPtr(), NULL, 0);
 	int spheres = 9;
+	
 	for (int i = 0; i < spheres; ++i)
 	{
 		for (int j = 0; j < spheres; ++j)
@@ -106,6 +107,8 @@ void Graphics::RenderFrame()
 			));
 			cb.metalness = static_cast<float>(j) / (spheres - 1);
 			cb.roughness = static_cast<float>(i) / (spheres - 1);
+			static const DirectX::XMFLOAT4 default_albedo = {0.95f, 0.64f, 0.54f, 1.0f};  // copper color
+			cb.albedo = default_albedo;
 			m_device_context_ptr->IASetVertexBuffers(0, 1, m_sphere.GetAddressOfVertexBuffer(), &stride, &offset);
 			m_device_context_ptr->IASetIndexBuffer(m_sphere.GetIndexBuffer(), DXGI_FORMAT_R16_UINT, 0);
 			m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
@@ -502,19 +505,18 @@ bool Graphics::initilize_scene()
 bool Graphics::initialize_lights()
 {
 	using namespace DirectX;
-	float a = 1.0f;
 	// Setup our lighting parameters
 	XMFLOAT4 vLightDirs[NUM_OF_LIGHT] =
 	{
-		XMFLOAT4(0, 0.0f, -50.0f, 1.0f),
-		XMFLOAT4(a, 0.0f, -10.0f, 1.0f),
-		XMFLOAT4(0.0f, static_cast<float>(5 * a * sin(60)), -10.0f, 1.0f),
+		XMFLOAT4(0.0f, 0.0f, -10.0f, 1.0f),
+		XMFLOAT4(0.0f, 0.0f, 10.0f, 1.0f),
+		XMFLOAT4(5.0f, 5.0f, -5.0f, 1.0f),
 	};
 	XMFLOAT4 vLightColors[NUM_OF_LIGHT] =
 	{
-		XMFLOAT4(1.0f, 0.5f, 0.0f, 1.0f),
 		XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),
-		XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
+		XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f),
+		XMFLOAT4(0.0f, 0.0f, 0.5f, 1.0f)
 	};
 	float vLightIntencitys[NUM_OF_LIGHT] =
 	{

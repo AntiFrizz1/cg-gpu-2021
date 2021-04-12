@@ -13,9 +13,10 @@ struct ConstantBuffer
     DirectX::XMFLOAT4 vLightColor[NUM_OF_LIGHT]; // 12
     DirectX::XMFLOAT4 vLightIntencity[NUM_OF_LIGHT];
     DirectX::XMFLOAT4 eye;
+
+    DirectX::XMFLOAT4 albedo;
     float             metalness;
     float             roughness;
-    DirectX::XMFLOAT3 albedo{0.91, 0.92, 0.92};
 };
 
 __declspec(align(16))

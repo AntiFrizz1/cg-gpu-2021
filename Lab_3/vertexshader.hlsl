@@ -8,9 +8,9 @@ cbuffer ConstantBuffer : register(b0)
     float4 vLightColor[NUM_OF_LIGHT];
     float4 vLightIntensity[NUM_OF_LIGHT];
     float4 Eye;
+    float4 albedo;
     float metalness;
     float roughness;
-    float3 albedo;
 };
 
 //--------------------------------------------------------------------------------------
