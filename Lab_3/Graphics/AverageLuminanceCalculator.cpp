@@ -4,18 +4,18 @@
 
 bool AverageLuminanceCalculator::Initialize(Microsoft::WRL::ComPtr<ID3D11Device> device_ptr, size_t width, size_t height)
 {
-    if (!m_vertex_shader.Initialize(device_ptr, L"colorvertexshader.cso", nullptr, 0))
+    if (!m_vertex_shader.Initialize(device_ptr, L"color_vertex_shader.cso", nullptr, 0))
     {
         return false;
     }
 
 
-    if (!m_pixel_shader.Initialize(device_ptr, L"colorpixelshader.cso"))
+    if (!m_pixel_shader.Initialize(device_ptr, L"color_pixel_shader.cso"))
     {
         return false;
     }
 
-    if (!m_luminance_pixel_shader.Initialize(device_ptr, L"luminancepixelshader.cso"))
+    if (!m_luminance_pixel_shader.Initialize(device_ptr, L"luminance_pixel_shader.cso"))
     {
         return false;
     }
@@ -140,6 +140,7 @@ float AverageLuminanceCalculator::process(Microsoft::WRL::ComPtr<ID3D11DeviceCon
     D3D11_MAPPED_SUBRESOURCE luminance_accessor;
     context->CopyResource(m_luminance_texture.Get(), m_textures[m_textures.size() - 1].GetTextureRenderTarget());
     context->Map(m_luminance_texture.Get(), 0, D3D11_MAP_READ, 0, &luminance_accessor);
+
     float luminance = *(float*)luminance_accessor.pData;
     context->Unmap(m_luminance_texture.Get(), 0);
 

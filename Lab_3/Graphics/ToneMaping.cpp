@@ -10,12 +10,12 @@ bool ToneMaping::Initialize(Microsoft::WRL::ComPtr<ID3D11Device> device,
 	m_width = width;
 	m_height = height;
 
-	if (!m_tone_vertex_shader.Initialize(device, L"tonevertexshader.cso", NULL, 0))
+	if (!m_tone_vertex_shader.Initialize(device, L"tone_vertex_shader.cso", NULL, 0))
 	{
 		return false;
 	}
 
-	if (!m_tone_pixel_shader.Initialize(device, L"tonepixelshader.cso"))
+	if (!m_tone_pixel_shader.Initialize(device, L"tone_pixel_shader.cso"))
 	{
 		return false;
 	}

@@ -1,4 +1,4 @@
-#include "commonshader.fx"
+#include "common_shader.fx"
 
 float4 main(PS_INPUT input) : SV_TARGET
 {

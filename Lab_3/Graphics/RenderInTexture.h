@@ -28,6 +28,7 @@ public:
     ID3D11ShaderResourceView* GetTextureShaderResourceView() const { return m_texture_shader_resource_view.Get(); };
     ID3D11Texture2D* GetTextureRenderTarget() const { return m_texture_render_target.Get(); };
     D3D11_VIEWPORT GetViewPort() const { return m_viewport; }
+    size_t GetMipLevels() const { return m_rtd.MipLevels; }
 
 private:
     Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_texture_render_target;
@@ -36,4 +37,5 @@ private:
 
     DXGI_FORMAT    m_format;
     D3D11_VIEWPORT m_viewport;
+    CD3D11_TEXTURE2D_DESC m_rtd;
 };

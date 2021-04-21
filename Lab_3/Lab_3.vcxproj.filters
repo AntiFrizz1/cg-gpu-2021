@@ -161,21 +161,26 @@
     <ClInclude Include="Graphics\DDSTextureLoader.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="vertexshader.hlsl" />
-    <FxCompile Include="tonepixelshader.hlsl" />
-    <FxCompile Include="tonevertexshader.hlsl" />
-    <FxCompile Include="luminancepixelshader.hlsl" />
-    <FxCompile Include="colorpixelshader.hlsl" />
-    <FxCompile Include="colorvertexshader.hlsl" />
-    <FxCompile Include="envpixelshader.hlsl">
+    <FxCompile Include="brdf_pixel_shader.hlsl" />
+    <FxCompile Include="color_pixel_shader.hlsl" />
+    <FxCompile Include="color_vertex_shader.hlsl" />
+    <FxCompile Include="fresnel_pixel_shader.hlsl" />
+    <FxCompile Include="geometry_pixel_shader.hlsl" />
+    <FxCompile Include="luminance_pixel_shader.hlsl" />
+    <FxCompile Include="ndf_pixel_shader.hlsl" />
+    <FxCompile Include="tone_pixel_shader.hlsl" />
+    <FxCompile Include="tone_vertex_shader.hlsl" />
+    <FxCompile Include="vertex_shader.hlsl" />
+    <FxCompile Include="env_pixel_shader.hlsl">
       <Filter>Исходные файлы</Filter>
     </FxCompile>
-    <FxCompile Include="geometrypixelshader.hlsl" />
-    <FxCompile Include="fresnelpixelshader.hlsl" />
-    <FxCompile Include="brdfpixelshader.hlsl" />
-    <FxCompile Include="ndfpixelshader.hlsl" />
+    <FxCompile Include="env_cubemap_pixel_shader.hlsl" />
+    <FxCompile Include="env_cubemap_vertex_shader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="texture.jpg">
@@ -184,6 +189,7 @@
     <Image Include="texture.dds" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="commonshader.fx" />
+    <None Include="texture_chinese_garden_1k.hdr" />
+    <None Include="common_shader.fx" />
   </ItemGroup>
 </Project>

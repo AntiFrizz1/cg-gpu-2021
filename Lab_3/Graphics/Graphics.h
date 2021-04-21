@@ -47,15 +47,24 @@ private:
 	bool initialize_tone_maping();
 	bool initialize_lights();
 	bool update_texture();
+	bool load_texture(const char* path);
+
+	bool create_cubemap_texture();
+	bool create_cubemap_from_env_texture();
+
 
 	Microsoft::WRL::ComPtr<ID3D11Device>             m_device_ptr;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext>      m_device_context_ptr;
 	Microsoft::WRL::ComPtr<IDXGISwapChain>           m_swap_chain_ptr;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   m_render_taget_view_ptr;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_texture_resource_view;
-	Microsoft::WRL::ComPtr< ID3D11SamplerState>      m_sampler_linear;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState>       m_sampler_linear;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_env_cubemap_texture;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_env_cubemap_texture_resource_view;
+
 	ToneMaping m_tone_maping;
 	RenderInTexture m_render_in_texture{ DXGI_FORMAT_R32G32B32A32_FLOAT };
+	RenderInTexture m_render_in_texture_for_cubemap{ DXGI_FORMAT_R32G32B32A32_FLOAT };
 	VertexShader m_vertex_shader;
 	PixelShader  m_env_pixel_shader;
 
@@ -63,6 +72,10 @@ private:
 	PixelShader m_ndf_pixel_shader;
 	PixelShader m_geometry_pixel_shader;
 	PixelShader m_fresnel_pixel_shader;
+
+	VertexShader m_env_cubemap_vertex_shader;
+	PixelShader m_env_cubemap_pixel_shader;
+
 	PbrShaderType m_cur_pbr_shader_type{ PbrShaderType::BRDF };
 
 	Sphere m_sphere;
@@ -90,4 +103,6 @@ private:
 	size_t m_width;
 	size_t m_height;
 	D3D_DRIVER_TYPE m_driver_type;
+
+	
 };

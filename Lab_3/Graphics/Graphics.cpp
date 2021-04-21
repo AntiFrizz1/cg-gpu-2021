@@ -2,7 +2,10 @@
 #include "../WinErrorLoger.h"
 #include "../Global.h"
 #include "DDSTextureLoader.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "../stb_image.h"
 
+constexpr size_t CUBE_MAP_SIZE = 512;
 bool Graphics::Initialize(HWND hwnd, size_t width, size_t height)
 {
 	m_width = width;
@@ -48,6 +51,13 @@ bool Graphics::Initialize(HWND hwnd, size_t width, size_t height)
 
 void Graphics::RenderFrame()
 {
+	static bool flag = true;
+	if (flag) 
+	{
+		create_cubemap_texture();
+		flag = false;
+	}
+
 	Global::GetAnnotation().BeginEvent(L"Start Render.");
 	float bgcolor[] = {0.0f, 0.0f, 1.0f, 1.0f};
 	ID3D11RenderTargetView* render_target = m_render_in_texture.GetTextureRenderTargetView();
@@ -264,32 +274,51 @@ bool Graphics::initilize_shaders()
 
 	UINT num_elements = ARRAYSIZE(layout);
 
-	if (!m_vertex_shader.Initialize(m_device_ptr, L"vertexshader.cso", layout, num_elements))
+	if (!m_vertex_shader.Initialize(m_device_ptr, L"vertex_shader.cso", layout, num_elements))
 	{
 		return false;
 	}
 
-	if (!m_brdf_pixel_shader.Initialize(m_device_ptr, L"brdfpixelshader.cso"))
+	if (!m_brdf_pixel_shader.Initialize(m_device_ptr, L"brdf_pixel_shader.cso"))
 	{
 		return false;
 	}
 
-	if (!m_geometry_pixel_shader.Initialize(m_device_ptr, L"geometrypixelshader.cso"))
+	if (!m_geometry_pixel_shader.Initialize(m_device_ptr, L"geometry_pixel_shader.cso"))
 	{
 		return false;
 	}
 
-	if (!m_ndf_pixel_shader.Initialize(m_device_ptr, L"ndfpixelshader.cso"))
+	if (!m_ndf_pixel_shader.Initialize(m_device_ptr, L"ndf_pixel_shader.cso"))
 	{
 		return false;
 	}
 
-	if (!m_fresnel_pixel_shader.Initialize(m_device_ptr, L"fresnelpixelshader.cso"))
+	if (!m_fresnel_pixel_shader.Initialize(m_device_ptr, L"fresnel_pixel_shader.cso"))
 	{
 		return false;
 	}
 
-	if (!m_env_pixel_shader.Initialize(m_device_ptr, L"envpixelshader.cso"))
+	if (!m_env_pixel_shader.Initialize(m_device_ptr, L"env_pixel_shader.cso"))
+	{
+		return false;
+	}
+
+
+	if (!m_env_cubemap_pixel_shader.Initialize(m_device_ptr, L"env_cubemap_pixel_shader.cso"))
+	{
+		return false;
+	}
+
+
+	/*
+	D3D11_INPUT_ELEMENT_DESC cubemap_layout[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};
+	num_elements = ARRAYSIZE(cubemap_layout);
+	*/
+	if (!m_env_cubemap_vertex_shader.Initialize(m_device_ptr, L"env_cubemap_vertex_shader.cso", layout, num_elements))
 	{
 		return false;
 	}
@@ -414,9 +443,20 @@ bool Graphics::initilize_scene()
 	m_view = DirectX::XMMatrixLookAtLH(m_camera.eye, m_camera.at, m_camera.up);
 	m_projection = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV2, m_width / (FLOAT)m_height, 0.01f, 100.0f);
 
+	/*
 	hr = CreateDDSTextureFromFile(m_device_ptr.Get(), L"texture.dds", nullptr, m_texture_resource_view.GetAddressOf());
 	if (FAILED(hr))
 		return false;
+	*/
+	if (!load_texture("texture_chinese_garden_1k.hdr"))
+	{
+		return false;
+	}
+	
+	if(!m_render_in_texture_for_cubemap.Initialize(m_device_ptr, CUBE_MAP_SIZE, CUBE_MAP_SIZE))
+	{
+		return false;
+	}
 
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
@@ -434,6 +474,225 @@ bool Graphics::initilize_scene()
 
 	return true;
 }
+
+bool Graphics::load_texture(const char* path) 
+{
+	HRESULT hr;
+	int w, h, n;
+	float* data = stbi_loadf(path, &w, &h, &n, STBI_rgb_alpha);
+	if (data == nullptr)
+		return false;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> environment_texture;
+	ID3D11Device* device = m_device_ptr.Get();
+
+	CD3D11_TEXTURE2D_DESC td(DXGI_FORMAT_R32G32B32A32_FLOAT, w, h, 1, 1, D3D11_BIND_SHADER_RESOURCE);
+	D3D11_SUBRESOURCE_DATA init_data;
+	init_data.pSysMem = data;
+	init_data.SysMemPitch = 4 * w * sizeof(float);
+	hr = device->CreateTexture2D(&td, &init_data, environment_texture.GetAddressOf());
+	stbi_image_free(data);
+	if (FAILED(hr))
+		return false;
+
+	CD3D11_SHADER_RESOURCE_VIEW_DESC srvd(D3D11_SRV_DIMENSION_TEXTURE2D, td.Format);
+	hr = device->CreateShaderResourceView(environment_texture.Get(), &srvd, m_texture_resource_view.GetAddressOf());
+	if (FAILED(hr))
+		return false;
+
+	return true;
+}
+
+bool Graphics::create_cubemap_texture() {
+
+
+	CD3D11_TEXTURE2D_DESC td = CD3D11_TEXTURE2D_DESC(DXGI_FORMAT_R32G32B32A32_FLOAT, CUBE_MAP_SIZE, CUBE_MAP_SIZE, 6, 0, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
+		D3D11_USAGE_DEFAULT, 0, 1, 0, D3D11_RESOURCE_MISC_TEXTURECUBE | D3D11_RESOURCE_MISC_GENERATE_MIPS);
+	HRESULT hr = m_device_ptr->CreateTexture2D(&td, nullptr, m_env_cubemap_texture.GetAddressOf());
+	if (FAILED(hr))
+		return false;
+
+	if (!create_cubemap_from_env_texture())
+	{
+		return false;
+	}
+
+	
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvd = CD3D11_SHADER_RESOURCE_VIEW_DESC(D3D11_SRV_DIMENSION_TEXTURECUBE, td.Format);
+	hr = m_device_ptr->CreateShaderResourceView(m_env_cubemap_texture.Get(), &srvd, m_env_cubemap_texture_resource_view.GetAddressOf());
+	if (FAILED(hr))
+		return false;
+
+	m_device_context_ptr->GenerateMips(m_texture_resource_view.Get());
+	
+	return false;
+
+}
+
+bool Graphics::create_cubemap_from_env_texture()
+{
+	HRESULT hr = S_OK;
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vertex_buffer;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> index_buffer;
+	Vertex vertices[4];
+	WORD indices[6] = {
+		0, 1, 2,
+		2, 3, 0
+	};
+	UINT indexCount = 6;
+
+
+	D3D11_SUBRESOURCE_DATA initData;
+	ZeroMemory(&initData, sizeof(D3D11_SUBRESOURCE_DATA));
+	CD3D11_BUFFER_DESC vbd(sizeof(Vertex) * 4, D3D11_BIND_VERTEX_BUFFER);
+	CD3D11_BUFFER_DESC ibd(sizeof(WORD) * indexCount, D3D11_BIND_INDEX_BUFFER);
+	initData.pSysMem = indices;
+	hr = m_device_ptr->CreateBuffer(&ibd, &initData, index_buffer.GetAddressOf());
+	if (FAILED(hr))
+		return false;
+
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+	D3D11_TEXTURE2D_DESC dtd;
+	m_env_cubemap_texture->GetDesc(&dtd);
+	D3D11_TEXTURE2D_DESC td = CD3D11_TEXTURE2D_DESC(dtd.Format, CUBE_MAP_SIZE, CUBE_MAP_SIZE, 1, 1, D3D11_BIND_RENDER_TARGET);
+	hr = m_device_ptr->CreateTexture2D(&td, nullptr, &texture);
+	if (FAILED(hr))
+		return false;
+
+	// Create render target view
+	CD3D11_RENDER_TARGET_VIEW_DESC rtvd(D3D11_RTV_DIMENSION_TEXTURE2D, td.Format);
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> render_target_ptr;
+	hr = m_device_ptr->CreateRenderTargetView(texture.Get(), &rtvd, &render_target_ptr);
+	if (FAILED(hr))
+		return false;
+
+	D3D11_VIEWPORT viewport;
+	viewport.Width = static_cast<FLOAT>(CUBE_MAP_SIZE);
+	viewport.Height = static_cast<FLOAT>(CUBE_MAP_SIZE);
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+
+
+	ConstantBuffer cb;
+	cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity());
+	cb.projection = DirectX::XMMatrixTranspose(DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV2, 1, 0.2f, 0.8f));
+
+	float bgcolor[] = { 0.0f, 1.0f, 0.0f, 1.0f };
+
+	ID3D11RenderTargetView* render_target = render_target_ptr.Get();
+
+	m_device_context_ptr->ClearRenderTargetView(render_target, bgcolor);
+	m_device_context_ptr->OMSetRenderTargets(1, &render_target, nullptr);
+	m_device_context_ptr->RSSetViewports(1, &viewport);
+	m_device_context_ptr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
+	m_device_context_ptr->IASetInputLayout(m_env_cubemap_vertex_shader.GetInputLayoutPtr());
+
+
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+
+	m_device_context_ptr->IASetIndexBuffer(index_buffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+
+	m_device_context_ptr->VSSetShader(m_env_cubemap_vertex_shader.GetShaderPtr(), NULL, 0);
+	m_device_context_ptr->VSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
+
+	m_device_context_ptr->PSSetShader(m_env_cubemap_pixel_shader.GetShaderPtr(), NULL, 0);
+
+	m_device_context_ptr->PSSetShaderResources(0, 1, m_texture_resource_view.GetAddressOf());     ////////////////////
+
+	m_device_context_ptr->PSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
+	m_device_context_ptr->PSSetSamplers(0, 1, m_sampler_linear.GetAddressOf());
+
+	static const DirectX::XMFLOAT3 square_left_bottom[6] = {
+	DirectX::XMFLOAT3(0.5f, -0.5f, 0.5f),   //  x+
+	DirectX::XMFLOAT3(-0.5f, -0.5f, -0.5f), //  x-   
+	DirectX::XMFLOAT3(-0.5f, 0.5f, 0.5f),   //  y+
+	DirectX::XMFLOAT3(-0.5f, -0.5f, -0.5f), //  y-
+	DirectX::XMFLOAT3(-0.5f, -0.5f, 0.5f),  //  z+
+	DirectX::XMFLOAT3(0.5f, -0.5f, -0.5f)   //  z-
+	};
+
+	static const DirectX::XMFLOAT3 square_right_top[6] = {
+		DirectX::XMFLOAT3(0.5f, 0.5f, -0.5f),	//  x+
+		DirectX::XMFLOAT3(-0.5f, 0.5f, 0.5f),	//  x-   
+		DirectX::XMFLOAT3(0.5f, 0.5f, -0.5f),	//  y+
+		DirectX::XMFLOAT3(0.5f, -0.5f, 0.5f),	//  y-
+		DirectX::XMFLOAT3(0.5f, 0.5f, 0.5f),	//  z+
+		DirectX::XMFLOAT3(-0.5f, 0.5f, -0.5f)	//  z-
+	};
+
+	static const DirectX::XMVECTOR at_arr[6] = {
+	DirectX::XMVectorSet(1, 0, 0, 0),		//  x+
+	DirectX::XMVectorSet(-1, 0, 0, 0),		//  x-
+	DirectX::XMVectorSet(0, 1, 0, 0),		//  y+
+	DirectX::XMVectorSet(0, -1, 0, 0),		//  y-
+	DirectX::XMVectorSet(0, 0, 1, 0),		//  z+
+	DirectX::XMVectorSet(0, 0, -1, 0)		//  z-
+	};
+
+	static const DirectX::XMVECTOR up_arr[6] = {
+		DirectX::XMVectorSet(0, 1, 0, 0),	//  x+
+		DirectX::XMVectorSet(0, 1, 0, 0),	//  x-
+		DirectX::XMVectorSet(0, 0, -1, 0),	//  y+
+		DirectX::XMVectorSet(0, 0, 1, 0),	//  y-
+		DirectX::XMVectorSet(0, 1, 0, 0),	//  z+
+		DirectX::XMVectorSet(0, 1, 0, 0)	//  z-
+	};
+
+	D3D11_BOX box = CD3D11_BOX(0, 0, 0, CUBE_MAP_SIZE, CUBE_MAP_SIZE, 1);
+
+	for (UINT i = 0; i < 6; ++i)
+	{
+		if (square_left_bottom[i].x == square_right_top[i].x)
+		{
+			vertices[0].pos = { square_left_bottom[i].x, square_left_bottom[i].y, square_left_bottom[i].z , 1.0};
+			vertices[1].pos = { square_left_bottom[i].x, square_right_top[i].y, square_left_bottom[i].z , 1.0 };
+			vertices[2].pos = { square_right_top[i].x, square_right_top[i].y, square_right_top[i].z , 1.0 };
+			vertices[3].pos = { square_right_top[i].x, square_left_bottom[i].y, square_right_top[i].z , 1.0 };
+		}
+
+		if (square_left_bottom[i].y == square_right_top[i].y)
+		{
+			vertices[0].pos = { square_left_bottom[i].x, square_left_bottom[i].y, square_left_bottom[i].z , 1.0 };
+			vertices[1].pos = { square_left_bottom[i].x, square_left_bottom[i].y, square_right_top[i].z , 1.0 };
+			vertices[2].pos = { square_right_top[i].x, square_left_bottom[i].y, square_right_top[i].z , 1.0 };
+			vertices[3].pos = { square_right_top[i].x, square_left_bottom[i].y, square_left_bottom[i].z, 1.0 };
+		}
+
+		if (square_left_bottom[i].z == square_right_top[i].z)
+		{
+			vertices[0].pos = { square_left_bottom[i].x, square_left_bottom[i].y, square_left_bottom[i].z, 1.0 };
+			vertices[1].pos = { square_left_bottom[i].x, square_right_top[i].y, square_left_bottom[i].z, 1.0 };
+			vertices[2].pos = { square_right_top[i].x, square_right_top[i].y, square_left_bottom[i].z, 1.0 };
+			vertices[3].pos = { square_right_top[i].x, square_left_bottom[i].y, square_left_bottom[i].z, 1.0 };
+		}
+
+
+		initData.pSysMem = vertices;
+		hr = m_device_ptr->CreateBuffer(&vbd, &initData, vertex_buffer.ReleaseAndGetAddressOf());
+		if (FAILED(hr))
+			return false;
+
+		m_device_context_ptr->IASetVertexBuffers(0, 1, vertex_buffer.GetAddressOf(), &stride, &offset);
+		cb.view = DirectX::XMMatrixTranspose(DirectX::XMMatrixLookAtLH(DirectX::XMVectorSet(0, 0, 0, 0), at_arr[i], up_arr[i]));
+		m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
+		m_device_context_ptr->ClearRenderTargetView(render_target, bgcolor);
+		m_device_context_ptr->DrawIndexed(indexCount, 0, 0);
+
+		m_device_context_ptr->CopySubresourceRegion(m_env_cubemap_texture.Get(), D3D11CalcSubresource(0, i, dtd.MipLevels), 0, 0, 0, texture.Get(), 0, &box);
+	}
+
+	ID3D11ShaderResourceView* nullsrv[] = { nullptr };
+	m_device_context_ptr->PSSetShaderResources(0, 1, nullsrv);
+
+	return true;
+}
+
 
 bool Graphics::initialize_lights()
 {

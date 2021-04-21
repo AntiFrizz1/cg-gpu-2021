@@ -1,4 +1,4 @@
-#include "commonshader.fx"
+#include "common_shader.fx"
 
 struct VS_INPUT
 {
