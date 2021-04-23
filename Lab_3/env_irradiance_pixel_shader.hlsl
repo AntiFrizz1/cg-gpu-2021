@@ -1,6 +1,6 @@
 #include "common_shader.fx"
-static const int N1 = 100;
-static const int N2 = 25;
+static const int N1 = 200;
+static const int N2 = 50;
 TextureCube cubemap_texture : register(t0);
 
 

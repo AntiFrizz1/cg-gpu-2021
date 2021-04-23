@@ -378,7 +378,7 @@ bool Graphics::initilize_scene()
 			float x = RADIUS * n_x + m_position.x;
 			float y = RADIUS * n_y + m_position.y;
 			float z = RADIUS * n_z + m_position.z;
-			m_sphere_vertex.push_back({ XMFLOAT4(x, y, z, 1.0f), XMFLOAT3(n_x, n_y, n_z), XMFLOAT2(static_cast<float>(ind) / (SPHERE_PARTS), static_cast<float>(layer) / (SPHERE_PARTS-1)) });
+			m_sphere_vertex.push_back({ XMFLOAT4(x, y, z, 1.0f), XMFLOAT3(n_x, n_y, n_z), XMFLOAT2(static_cast<float>(ind) / (SPHERE_PARTS), static_cast<float>(layer) / (SPHERE_PARTS)) });
 			++ind;
 		}
 		{
@@ -388,7 +388,7 @@ bool Graphics::initilize_scene()
 			float x = RADIUS * n_x + m_position.x;
 			float y = RADIUS * n_y + m_position.y;
 			float z = RADIUS * n_z + m_position.z;
-			m_sphere_vertex.push_back({ XMFLOAT4(x, y, z, 1.0f), XMFLOAT3(n_x, n_y, n_z), XMFLOAT2(static_cast<float>(ind) / (SPHERE_PARTS), static_cast<float>(layer) / (SPHERE_PARTS - 1)) });
+			m_sphere_vertex.push_back({ XMFLOAT4(x, y, z, 1.0f), XMFLOAT3(n_x, n_y, n_z), XMFLOAT2(static_cast<float>(ind) / (SPHERE_PARTS ), static_cast<float>(layer) / (SPHERE_PARTS)) });
 		}
 		if (layer > 0)
 		{
@@ -469,9 +469,10 @@ bool Graphics::initilize_scene()
 	if (FAILED(hr))
 		return false;
 	*/
-	//if (!load_texture("texture_chinese_garden_1k.hdr"))
-	if (!load_texture("env_spruit_sunrise_1k.hdr"))
-	//if (!load_texture("env.hdr"))
+	if (!load_texture("the_sky_is_on_fire_1k.hdr"))
+	//if (!load_texture("kloppenheim_06_1k.hdr"))
+	//if (!load_texture("evening_road_01_1k.hdr"))
+	//if (!load_texture("kiara_1_dawn_1k.hdr"))
 	{
 		return false;
 	}
