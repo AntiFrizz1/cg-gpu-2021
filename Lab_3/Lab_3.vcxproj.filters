@@ -181,6 +181,8 @@
     </FxCompile>
     <FxCompile Include="env_cubemap_pixel_shader.hlsl" />
     <FxCompile Include="env_cubemap_vertex_shader.hlsl" />
+    <FxCompile Include="env_irradiance_pixel_shader.hlsl" />
+    <FxCompile Include="env_irradiance_vertex_shader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="texture.jpg">

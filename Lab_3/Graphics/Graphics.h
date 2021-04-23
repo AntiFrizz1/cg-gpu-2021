@@ -50,8 +50,8 @@ private:
 	bool load_texture(const char* path);
 
 	bool create_cubemap_texture();
-	bool create_cubemap_from_env_texture();
-
+	bool create_cubemap_from_texture(size_t cubemap_size, ID3D11Texture2D* dst, ID3D11ShaderResourceView* src, VertexShader* vs, PixelShader* ps, UINT mip_slice);
+	bool create_irradiance_texture_from_cubemap();
 
 	Microsoft::WRL::ComPtr<ID3D11Device>             m_device_ptr;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext>      m_device_context_ptr;
@@ -61,6 +61,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState>       m_sampler_linear;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_env_cubemap_texture;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_env_cubemap_texture_resource_view;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_env_irradiance_texture;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_env_irradiance_texture_resource_view;
+
 
 	ToneMaping m_tone_maping;
 	RenderInTexture m_render_in_texture{ DXGI_FORMAT_R32G32B32A32_FLOAT };
@@ -75,6 +78,9 @@ private:
 
 	VertexShader m_env_cubemap_vertex_shader;
 	PixelShader m_env_cubemap_pixel_shader;
+
+	VertexShader m_env_irradiance_vertex_shader;
+	PixelShader m_env_irradiance_pixel_shader;
 
 	PbrShaderType m_cur_pbr_shader_type{ PbrShaderType::BRDF };
 
