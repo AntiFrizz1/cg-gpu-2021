@@ -39,6 +39,8 @@ public:
 	void SwitchToneMaping() { m_tone_maping_enable ^= true; }
 	void SetPbrShaderType(PbrShaderType type) { m_cur_pbr_shader_type = type; }
 	bool OnResizeWindow(size_t width, size_t height);
+	bool create_depth_stencil_buffer(size_t width, size_t height);
+
 
 private:
 	bool initialize_directx(HWND hwnd, size_t width, size_t height);
@@ -90,4 +92,8 @@ private:
 	size_t m_width;
 	size_t m_height;
 	D3D_DRIVER_TYPE m_driver_type;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_depth_ptr;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depthDSV_ptr;
+
 };
