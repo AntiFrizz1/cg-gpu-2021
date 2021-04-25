@@ -96,14 +96,19 @@ void Graphics::RenderFrame()
 	cb.world = DirectX::XMMatrixTranspose(m_world1);
 	cb.view = DirectX::XMMatrixTranspose(m_view);
 	cb.projection = DirectX::XMMatrixTranspose(m_projection);
-	for (int m = 0; m < NUM_OF_LIGHT; m++) {
-		cb.vLightDir[m] = m_vLightDirs[m];
-		cb.vLightColor[m] = m_vLightColors[m];
-		cb.vLightIntencity[m] = DirectX::XMFLOAT4(m_vLightIntencitys[m], 0.0f, 0.0f, 0.0f);
-	}
 	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
-
 	m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
+
+	LightsConstantBuffer lb;
+	for (int m = 0; m < NUM_OF_LIGHT; m++) 
+	{
+		lb.vLightDir[m] = m_vLightDirs[m];
+		lb.vLightColor[m] = m_vLightColors[m];
+		lb.vLightIntencity[m] = DirectX::XMFLOAT4(m_vLightIntencitys[m], 0.0f, 0.0f, 0.0f);
+	}
+	m_device_context_ptr->UpdateSubresource(m_lights_buffer.Get(), 0, nullptr, &lb, 0, 0);
+
+
 	m_device_context_ptr->IASetInputLayout(m_vertex_shader.GetInputLayoutPtr());
 
 	UINT stride = sizeof(Vertex);
@@ -115,6 +120,8 @@ void Graphics::RenderFrame()
 	m_device_context_ptr->VSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
 	m_device_context_ptr->PSSetShader(m_env_pixel_shader.GetShaderPtr(), NULL, 0);
 	m_device_context_ptr->PSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
+	m_device_context_ptr->PSSetConstantBuffers(1, 1, m_lights_buffer.GetAddressOf());
+	m_device_context_ptr->PSSetConstantBuffers(2, 1, m_material_buffer.GetAddressOf());
 	m_device_context_ptr->PSSetShaderResources(0, 1, m_texture_resource_view.GetAddressOf());
 	m_device_context_ptr->PSSetSamplers(0, 1, m_sampler_linear.GetAddressOf());
 	m_device_context_ptr->DrawIndexed(m_sphere_indicies.size(), 0, 0);
@@ -135,6 +142,7 @@ void Graphics::RenderFrame()
 		m_device_context_ptr->PSSetShader(m_fresnel_pixel_shader.GetShaderPtr(), NULL, 0);
 	}
 
+	MaterialConstantBuffer mb;
 	int constexpr SPHERES_COUNT = 9;
 	for (int i = 0; i < SPHERES_COUNT; ++i)
 	{
@@ -145,13 +153,15 @@ void Graphics::RenderFrame()
 				(j - SPHERES_COUNT / 2) * Sphere::RADIUS * 3,
 				0
 			));
-			cb.metalness = static_cast<float>(j) / (SPHERES_COUNT - 1);
-			cb.roughness = static_cast<float>(i) / (SPHERES_COUNT - 1);
+			mb.metalness = static_cast<float>(j) / (SPHERES_COUNT - 1);
+			mb.roughness = static_cast<float>(i) / (SPHERES_COUNT - 1);
 			static const DirectX::XMFLOAT4 default_albedo = {0.95f, 0.64f, 0.54f, 1.0f};  // copper color
-			cb.albedo = default_albedo;
+			mb.albedo = default_albedo;
+
 			m_device_context_ptr->IASetVertexBuffers(0, 1, m_sphere.GetAddressOfVertexBuffer(), &stride, &offset);
 			m_device_context_ptr->IASetIndexBuffer(m_sphere.GetIndexBuffer(), DXGI_FORMAT_R16_UINT, 0);
 			m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
+			m_device_context_ptr->UpdateSubresource(m_material_buffer.Get(), 0, nullptr, &mb, 0, 0);
 			//m_device_context_ptr->PSSetShaderResources(1, 1, m_env_irradiance_texture_resource_view.GetAddressOf());
 			m_device_context_ptr->DrawIndexed(m_sphere.GetIniciesSize(), 0, 0);
 		}
@@ -462,6 +472,30 @@ bool Graphics::initilize_scene()
 	constant_buffer_desc.CPUAccessFlags = 0;
 
 	hr = m_device_ptr->CreateBuffer(&constant_buffer_desc, nullptr, m_constant_buffer.GetAddressOf());
+	if (FAILED(hr))
+	{
+		utils::WinErrorLogger::Log(hr, "Failed to create consatnt buffer.");
+		return false;
+	}
+
+	ZeroMemory(&constant_buffer_desc, sizeof(constant_buffer_desc));
+	constant_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+	constant_buffer_desc.ByteWidth = sizeof(ConstantBuffer);
+	constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constant_buffer_desc.CPUAccessFlags = 0;
+	hr = m_device_ptr->CreateBuffer(&constant_buffer_desc, nullptr, m_lights_buffer.GetAddressOf());
+	if (FAILED(hr))
+	{
+		utils::WinErrorLogger::Log(hr, "Failed to create consatnt buffer.");
+		return false;
+	}
+
+	ZeroMemory(&constant_buffer_desc, sizeof(constant_buffer_desc));
+	constant_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+	constant_buffer_desc.ByteWidth = sizeof(ConstantBuffer);
+	constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constant_buffer_desc.CPUAccessFlags = 0;
+	hr = m_device_ptr->CreateBuffer(&constant_buffer_desc, nullptr, m_material_buffer.GetAddressOf());
 	if (FAILED(hr))
 	{
 		utils::WinErrorLogger::Log(hr, "Failed to create consatnt buffer.");

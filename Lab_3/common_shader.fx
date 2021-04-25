@@ -7,14 +7,22 @@ cbuffer ConstantBuffer : register(b0)
     matrix world;
     matrix view;
     matrix projection;
+    float4 Eye;
+};
+
+cbuffer LightsBuffer: register(b1)
+{
     float4 vLightDir[NUM_OF_LIGHT];
     float4 vLightColor[NUM_OF_LIGHT];
     float4 vLightIntensity[NUM_OF_LIGHT];
-    float4 Eye;
+}
+
+cbuffer MaterialBuffer: register(b2)
+{
     float4 albedo;
     float metalness;
     float roughness;
-};
+}
 
 Texture2D txDiffuse : register(t0);
 TextureCube diffuse_irradiance_map : register(t1);
@@ -28,6 +36,8 @@ struct PS_INPUT
     float2 TexCoord : TEXCOORD1;
     float4 WorldPos : TEXCOORD2;
 };
+
+
 
 float NDG_GGXTR(float3 n, float3 h, float alpha)
 {

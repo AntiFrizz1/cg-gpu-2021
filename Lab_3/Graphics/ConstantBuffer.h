@@ -9,15 +9,25 @@ struct ConstantBuffer
     DirectX::XMMATRIX world; // 16
     DirectX::XMMATRIX view; // 16
     DirectX::XMMATRIX projection;// 16
+    DirectX::XMFLOAT4 eye;
+};
+
+__declspec(align(16))
+struct LightsConstantBuffer
+{
     DirectX::XMFLOAT4 vLightDir[NUM_OF_LIGHT]; //12
     DirectX::XMFLOAT4 vLightColor[NUM_OF_LIGHT]; // 12
     DirectX::XMFLOAT4 vLightIntencity[NUM_OF_LIGHT];
-    DirectX::XMFLOAT4 eye;
+};
 
+__declspec(align(16))
+struct MaterialConstantBuffer
+{
     DirectX::XMFLOAT4 albedo;
     float             metalness;
     float             roughness;
 };
+
 
 __declspec(align(16))
 struct LuminanceConstantBuffer

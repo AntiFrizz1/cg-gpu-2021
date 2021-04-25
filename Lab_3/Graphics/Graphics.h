@@ -12,6 +12,8 @@
 #include "ToneMaping.h"
 #include "Sphere.h"
 #include "WorldCameraPosition.h"
+#include "ConstantBuffer.h"
+
 //#pragma comment (lib, "d3d11.lib")
 //#pragma comment (lib, "DirectXTK.lib")
 
@@ -67,6 +69,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_env_irradiance_texture_resource_view;
 
 
+
+
+
+
 	ToneMaping m_tone_maping;
 	RenderInTexture m_render_in_texture{ DXGI_FORMAT_R32G32B32A32_FLOAT };
 	RenderInTexture m_render_in_texture_for_cubemap{ DXGI_FORMAT_R32G32B32A32_FLOAT };
@@ -99,8 +105,14 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_index_buffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constant_buffer;
 
+	Microsoft::WRL::ComPtr<ID3D11Buffer>  m_lights_buffer;
+	Microsoft::WRL::ComPtr<ID3D11Buffer>  m_material_buffer;
+
 	
-	D3D11_VIEWPORT       m_viewport;
+	//LightsConstantBuffer				m_lights_buffer_data;
+	//MaterialConstantBuffer				m_material_buffer_data;
+
+	D3D11_VIEWPORT    m_viewport;
 	DirectX::XMMATRIX m_translation;
 	DirectX::XMMATRIX m_world1;
 	DirectX::XMMATRIX m_view;
