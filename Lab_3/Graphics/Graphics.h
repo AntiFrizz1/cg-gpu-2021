@@ -52,6 +52,8 @@ private:
 	bool create_cubemap_texture();
 	bool create_cubemap_from_texture(size_t cubemap_size, ID3D11Texture2D* dst, ID3D11ShaderResourceView* src, VertexShader* vs, PixelShader* ps, UINT mip_slice);
 	bool create_irradiance_texture_from_cubemap();
+	bool create_depth_stencil_buffer(size_t width, size_t height);
+
 
 	Microsoft::WRL::ComPtr<ID3D11Device>             m_device_ptr;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext>      m_device_context_ptr;
@@ -96,6 +98,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_vertex_buffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_index_buffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constant_buffer;
+
 	
 	D3D11_VIEWPORT       m_viewport;
 	DirectX::XMMATRIX m_translation;
@@ -109,6 +112,9 @@ private:
 	size_t m_width;
 	size_t m_height;
 	D3D_DRIVER_TYPE m_driver_type;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_depth_ptr;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depthDSV_ptr;
 
 	
 };
