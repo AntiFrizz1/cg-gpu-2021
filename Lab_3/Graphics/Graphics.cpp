@@ -48,7 +48,6 @@ bool Graphics::Initialize(HWND hwnd, size_t width, size_t height)
 		return false;
 	}
 
-
 	if (!create_depth_stencil_buffer(m_width, m_height)) {
 		return false;
 	}
@@ -77,7 +76,7 @@ void Graphics::RenderFrame()
 	D3D11_VIEWPORT viewport = m_render_in_texture.GetViewPort();
 	m_device_context_ptr->ClearRenderTargetView(render_target, bgcolor);
 	m_device_context_ptr->ClearRenderTargetView(m_render_taget_view_ptr.Get(), bgcolor);
-
+	m_device_context_ptr->ClearDepthStencilView(m_depthDSV_ptr.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	if (m_tone_maping_enable)
 	{
@@ -87,7 +86,6 @@ void Graphics::RenderFrame()
 	{
 		m_device_context_ptr->OMSetRenderTargets(1, m_render_taget_view_ptr.GetAddressOf(), m_depthDSV_ptr.Get());
 	}
-	m_device_context_ptr->ClearDepthStencilView(m_depthDSV_ptr.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	m_device_context_ptr->RSSetViewports(1, &viewport);
 	m_device_context_ptr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -406,7 +404,8 @@ bool Graphics::initilize_scene()
 			float x = RADIUS * n_x + m_position.x;
 			float y = RADIUS * n_y + m_position.y;
 			float z = RADIUS * n_z + m_position.z;
-			m_sphere_vertex.push_back({ XMFLOAT4(x, y, z, 1.0f), XMFLOAT3(n_x, n_y, n_z), XMFLOAT2(static_cast<float>(ind) / (SPHERE_PARTS ), static_cast<float>(layer) / (SPHERE_PARTS)) });
+
+			m_sphere_vertex.push_back({ XMFLOAT4(x, y, z, 1.0f), XMFLOAT3(n_x, n_y, n_z), XMFLOAT2(static_cast<float>(ind) / (SPHERE_PARTS), static_cast<float>(layer) / (SPHERE_PARTS)) });
 		}
 		if (layer > 0)
 		{
@@ -888,8 +887,6 @@ bool Graphics::OnResizeWindow(size_t width, size_t height)
 			return false;
 		}
 		return m_tone_maping.OnResizeWindow(width, height) && m_render_in_texture.Initialize(m_device_ptr, width, height);
-
-		
 	}
 	else
 	{
