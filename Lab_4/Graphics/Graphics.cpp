@@ -53,24 +53,36 @@ bool Graphics::Initialize(HWND hwnd, size_t width, size_t height)
 		return false;
 	}
 
+	if (!compute_preintegrated_textures()) {
+		return false;
+	}
+
 	return true;
 }
 
+bool Graphics::compute_preintegrated_textures() {
+	Global::GetAnnotation().BeginEvent(L"Start Render Env Cubemap.");
+	if (!create_cubemap_texture()) 
+	{
+		Global::GetAnnotation().EndEvent();
+		return false;
+	}
+	Global::GetAnnotation().EndEvent();
+
+	Global::GetAnnotation().BeginEvent(L"Start Render irradiance texture.");
+	if (!create_irradiance_texture_from_cubemap()) 
+	{
+		Global::GetAnnotation().EndEvent();
+		return false;
+	}
+	Global::GetAnnotation().EndEvent();
+
+	return true;
+}
+
+
 void Graphics::RenderFrame()
 {
-	static bool flag = true;
-	if (flag) 
-	{
-		Global::GetAnnotation().BeginEvent(L"Start Render Env Cubemap.");
-
-		create_cubemap_texture();
-		Global::GetAnnotation().EndEvent();
-		Global::GetAnnotation().BeginEvent(L"Start Render irradiance texture.");
-		create_irradiance_texture_from_cubemap();
-		Global::GetAnnotation().EndEvent();
-		flag = false;
-	}
-
 	Global::GetAnnotation().BeginEvent(L"Start Render.");
 	float bgcolor[] = {0.0f, 0.0f, 1.0f, 1.0f};
 	ID3D11RenderTargetView* render_target = m_render_in_texture.GetTextureRenderTargetView();
@@ -592,7 +604,7 @@ bool Graphics::create_cubemap_texture() {
 
 	m_device_context_ptr->GenerateMips(m_texture_resource_view.Get());
 	
-	return false;
+	return true;
 
 }
 
@@ -617,7 +629,7 @@ bool Graphics::create_irradiance_texture_from_cubemap() {
 	if (FAILED(hr))
 		return false;
 
-	return false;
+	return true;
 
 }
 
