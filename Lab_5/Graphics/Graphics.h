@@ -48,6 +48,7 @@ private:
 	bool initilize_scene();
 	bool initialize_tone_maping();
 	bool initialize_lights();
+	bool compute_preintegrated_textures();
 	bool update_texture();
 	bool load_texture(const char* path);
 
