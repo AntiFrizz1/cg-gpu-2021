@@ -3,7 +3,6 @@ static const int N1 = 200;
 static const int N2 = 50;
 TextureCube cubemap_texture : register(t0);
 
-
 float4 main(PS_INPUT input) : SV_TARGET
 {
     float3 normal = normalize(input.Norm);

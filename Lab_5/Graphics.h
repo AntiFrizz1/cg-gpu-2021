@@ -57,6 +57,7 @@ private:
 	bool create_irradiance_texture_from_cubemap();
 	bool create_prefiltered_color_texture();
 	bool create_depth_stencil_buffer(size_t width, size_t height);
+	bool create_preintegrated_brdf_texture();
 
 
 	Microsoft::WRL::ComPtr<ID3D11Device>             m_device_ptr;
@@ -65,13 +66,15 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   m_render_taget_view_ptr;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_texture_resource_view;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState>       m_sampler_linear;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState>       m_sampler_clamp;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_env_cubemap_texture;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_env_cubemap_texture_resource_view;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_env_irradiance_texture;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_env_irradiance_texture_resource_view;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_prefiltered_color_texture;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_prefiltered_color_texture_resource_view;
-
+	Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_preintegrated_brdf_texture;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_preintegrated_brdf_texture_resource_view;
 
 
 
@@ -95,6 +98,7 @@ private:
 	PixelShader m_env_irradiance_pixel_shader;
 
 	PixelShader m_prefiltered_color_pixel_shader;
+	PixelShader m_preintegrated_brdf_pixel_shader;
 
 	PbrShaderType m_cur_pbr_shader_type{ PbrShaderType::BRDF };
 
@@ -114,7 +118,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer>  m_lights_buffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>  m_material_buffer;
 
-	
+
 	//LightsConstantBuffer				m_lights_buffer_data;
 	//MaterialConstantBuffer				m_material_buffer_data;
 
@@ -123,7 +127,7 @@ private:
 	DirectX::XMMATRIX m_world1;
 	DirectX::XMMATRIX m_view;
 	DirectX::XMMATRIX m_projection;
-	
+
 	CameraPosition m_camera;
 	WorldCameraPosition m_camera_position;
 	bool m_tone_maping_enable{ true };
@@ -134,5 +138,26 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_depth_ptr;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depthDSV_ptr;
 
-	
+	DirectX::XMFLOAT4 m_default_colors[6] = {
+		{ 0.95f, 0.64f, 0.54f, 1.0f },  // copper color
+		{ 0.56f, 0.57f, 0.58f, 1.0f },  // iron color
+		{ 1.0f,  0.71f, 0.29f, 1.0f },  // gold color
+		{ 0.91f, 0.92f, 0.92f, 1.0f },  // aluminum color
+		{ 0.95f, 0.93f, 0.88f, 1.0f },  // silver color
+	};
+
+	enum class AlbedoColors
+	{
+		COOPER = 0,
+		IRON,
+		GOLD,
+		ALUMINIUM,
+		SILVER
+	};
+
+	AlbedoColors m_albedo_color = AlbedoColors::IRON;
+
+
+
+
 };

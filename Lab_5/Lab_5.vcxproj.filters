@@ -184,6 +184,7 @@
     <FxCompile Include="env_irradiance_pixel_shader.hlsl" />
     <FxCompile Include="env_irradiance_vertex_shader.hlsl" />
     <FxCompile Include="prefiltered_color_pixel_shader.hlsl" />
+    <FxCompile Include="preintegrated_brdf_pixel_shader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="texture.jpg">
@@ -194,5 +195,6 @@
   <ItemGroup>
     <None Include="texture_chinese_garden_1k.hdr" />
     <None Include="common_shader.fx" />
+    <None Include="common_ibl_shader_func.fx" />
   </ItemGroup>
 </Project>

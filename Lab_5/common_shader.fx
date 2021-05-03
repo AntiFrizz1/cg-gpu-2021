@@ -25,7 +25,6 @@ cbuffer MaterialBuffer: register(b2)
 }
 
 Texture2D txDiffuse : register(t0);
-TextureCube diffuse_irradiance_map : register(t1);
 
 SamplerState samLinear : register(s0);
 
@@ -69,7 +68,8 @@ float3 Fresnel(float3 h, float3 v)
     return F0 + (max(1- roughness, F0) - F0) * pow(1 - dot(h, v), 5);
 }
 
-float3 AmbientIRradiance(float3 n, float3 v)
+/*
+float3 Ambient(float3 n, float3 v)
 {
     float3 F = Fresnel(n, v);
     float3 kS = F;
@@ -80,17 +80,4 @@ float3 AmbientIRradiance(float3 n, float3 v)
     float3 ambient = kD * diffuse;
 
     return float4(ambient, 1.0);
-}
-
-float3 BRDF(float3 n, float3 v, float3 l)
-{
-    float3 color;
-    float3 h = normalize(v + l);
-    float k = pow(roughness + 1, 2) / 8;
-    float G = G_func(n, v, l, k) * sign(max(dot(v, n), 0));
-    float D = NDG_GGXTR(n, h, roughness) * sign(max(dot(l, n), 0));
-    float3 F = Fresnel(h, v) * sign(max(dot(l, n), 0));
-
-    color = (1 - F) * albedo.xyz / M_PI * (1 - metalness) + D * F * G / (ROUGHNESS_MIN + 4 * (max(dot(l, n), 0) * max(dot(v, n), 0)));
-    return float4(color, 1.0);
-}
+}*/
