@@ -22,9 +22,6 @@
     <Filter Include="Graphics">
       <UniqueIdentifier>{2cb90ddf-28b9-4ca9-bb2e-1b57eef96b7e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="EnvShaders">
-      <UniqueIdentifier>{5937accf-4216-4d4b-861c-7c96093086c9}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine.cpp">
@@ -186,6 +183,7 @@
     <FxCompile Include="env_cubemap_vertex_shader.hlsl" />
     <FxCompile Include="env_irradiance_pixel_shader.hlsl" />
     <FxCompile Include="env_irradiance_vertex_shader.hlsl" />
+    <FxCompile Include="prefiltered_color_pixel_shader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="texture.jpg">
