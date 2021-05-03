@@ -7,6 +7,8 @@
 
 constexpr size_t CUBE_MAP_SIZE = 512;
 constexpr size_t IRRADIANCE_SIZE = 32;
+constexpr size_t PREFILTERED_COLOR_SIZE = 128;
+constexpr size_t PREINTEGRATED_BRDF_SIZE = 128;
 
 bool Graphics::Initialize(HWND hwnd, size_t width, size_t height)
 {
@@ -77,6 +79,23 @@ bool Graphics::compute_preintegrated_textures() {
 	}
 	Global::GetAnnotation().EndEvent();
 
+	Global::GetAnnotation().BeginEvent(L"Start Render prefiltered color texture.");
+	if (!create_prefiltered_color_texture())
+	{
+		Global::GetAnnotation().EndEvent();
+		return false;
+	}
+	Global::GetAnnotation().EndEvent();
+
+	Global::GetAnnotation().BeginEvent(L"Start Render preintegrated BRDF texture.");
+	if (!create_preintegrated_brdf_texture())
+	{
+		Global::GetAnnotation().EndEvent();
+		return false;
+	}
+	Global::GetAnnotation().EndEvent();
+
+
 	return true;
 }
 
@@ -142,7 +161,12 @@ void Graphics::RenderFrame()
 	{
 	case PbrShaderType::BRDF:
 		m_device_context_ptr->PSSetShaderResources(1, 1, m_env_irradiance_texture_resource_view.GetAddressOf());
+		m_device_context_ptr->PSSetShaderResources(2, 1, m_prefiltered_color_texture_resource_view.GetAddressOf());
+		m_device_context_ptr->PSSetShaderResources(3, 1, m_preintegrated_brdf_texture_resource_view.GetAddressOf());
+		m_device_context_ptr->PSSetSamplers(1, 1, m_sampler_clamp.GetAddressOf());
 		m_device_context_ptr->PSSetShader(m_brdf_pixel_shader.GetShaderPtr(), NULL, 0);
+
+
 		break;
 	case PbrShaderType::NDF:
 		m_device_context_ptr->PSSetShader(m_ndf_pixel_shader.GetShaderPtr(), NULL, 0);
@@ -167,8 +191,7 @@ void Graphics::RenderFrame()
 			));
 			mb.metalness = static_cast<float>(j) / (SPHERES_COUNT - 1);
 			mb.roughness = static_cast<float>(i) / (SPHERES_COUNT - 1);
-			static const DirectX::XMFLOAT4 default_albedo = {0.95f, 0.64f, 0.54f, 1.0f};  // copper color
-			mb.albedo = default_albedo;
+			mb.albedo = m_default_colors[static_cast<int>(m_albedo_color)];
 
 			m_device_context_ptr->IASetVertexBuffers(0, 1, m_sphere.GetAddressOfVertexBuffer(), &stride, &offset);
 			m_device_context_ptr->IASetIndexBuffer(m_sphere.GetIndexBuffer(), DXGI_FORMAT_R16_UINT, 0);
@@ -374,6 +397,17 @@ bool Graphics::initilize_shaders()
 		return false;
 	}
 
+
+	if (!m_prefiltered_color_pixel_shader.Initialize(m_device_ptr, L"prefiltered_color_pixel_shader.cso"))
+	{
+		return false;
+	}
+	if (!m_preintegrated_brdf_pixel_shader.Initialize(m_device_ptr, L"preintegrated_brdf_pixel_shader.cso"))
+	{
+		return false;
+	}
+	
+
 	return true;
 }
 
@@ -551,6 +585,11 @@ bool Graphics::initilize_scene()
 	if (FAILED(hr))
 		return false;
 
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	hr = m_device_ptr->CreateSamplerState(&sampDesc, m_sampler_clamp.GetAddressOf());
+
 
 	return true;
 }
@@ -633,6 +672,135 @@ bool Graphics::create_irradiance_texture_from_cubemap() {
 
 }
 
+
+bool Graphics::create_prefiltered_color_texture() {
+
+	CD3D11_TEXTURE2D_DESC td = CD3D11_TEXTURE2D_DESC(DXGI_FORMAT_R32G32B32A32_FLOAT, PREFILTERED_COLOR_SIZE, PREFILTERED_COLOR_SIZE, 6, 5, D3D11_BIND_SHADER_RESOURCE,
+		D3D11_USAGE_DEFAULT, 0, 1, 0, D3D11_RESOURCE_MISC_TEXTURECUBE);
+	HRESULT hr = m_device_ptr->CreateTexture2D(&td, nullptr, m_prefiltered_color_texture.GetAddressOf());
+	if (FAILED(hr))
+		return false;
+
+
+	m_device_context_ptr->PSSetConstantBuffers(1, 1, m_material_buffer.GetAddressOf());
+	MaterialConstantBuffer mb;
+	for (UINT i = 0; i < td.MipLevels; ++i)
+	{
+		mb.roughness = 0.25f * i;
+		m_device_context_ptr->UpdateSubresource(m_material_buffer.Get(), 0, nullptr, &mb, 0, 0);
+
+		if (!create_cubemap_from_texture(PREFILTERED_COLOR_SIZE / static_cast<size_t>(pow(2, i)), m_prefiltered_color_texture.Get(), m_env_cubemap_texture_resource_view.Get(),
+			&m_env_irradiance_vertex_shader, &m_prefiltered_color_pixel_shader, i))
+		{
+			return false;
+		}
+	}
+
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvd = CD3D11_SHADER_RESOURCE_VIEW_DESC(D3D11_SRV_DIMENSION_TEXTURECUBE, td.Format, 0, 1);
+	hr = m_device_ptr->CreateShaderResourceView(m_prefiltered_color_texture.Get(), &srvd, m_prefiltered_color_texture_resource_view.GetAddressOf());
+	if (FAILED(hr))
+		return false;
+
+	return true;
+
+}
+
+bool Graphics::create_preintegrated_brdf_texture() {
+	HRESULT hr = S_OK;
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vertex_buffer;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> index_buffer;
+
+	Vertex vertices[4] = {
+	{DirectX::XMFLOAT4(0.0f, 0.0f, 0.5f, 1.0f)},
+	{DirectX::XMFLOAT4(0.0f, 1.0f, 0.5f, 1.0f)},
+	{DirectX::XMFLOAT4(1.0f, 1.0f, 0.5f, 1.0f)},
+	{DirectX::XMFLOAT4(1.0f, 0.0f, 0.5f, 1.0f)}
+	};
+
+	WORD indices[6] = {
+		0, 1, 2,
+		2, 3, 0
+	};
+	size_t indexCount = 6;
+
+
+	D3D11_SUBRESOURCE_DATA initData;
+	ZeroMemory(&initData, sizeof(D3D11_SUBRESOURCE_DATA));
+	CD3D11_BUFFER_DESC ibd(sizeof(WORD) * indexCount, D3D11_BIND_INDEX_BUFFER);
+	initData.pSysMem = indices;
+	hr = m_device_ptr->CreateBuffer(&ibd, &initData, index_buffer.GetAddressOf());
+	if (FAILED(hr))
+		return false;
+
+	CD3D11_BUFFER_DESC vbd(sizeof(Vertex) * ARRAYSIZE(vertices), D3D11_BIND_VERTEX_BUFFER);
+	initData.pSysMem = vertices;
+	hr = m_device_ptr->CreateBuffer(&vbd, &initData, vertex_buffer.ReleaseAndGetAddressOf());
+	if (FAILED(hr))
+		return false;
+
+	D3D11_TEXTURE2D_DESC td = CD3D11_TEXTURE2D_DESC(DXGI_FORMAT_R32G32B32A32_FLOAT, PREINTEGRATED_BRDF_SIZE, PREINTEGRATED_BRDF_SIZE, 1, 1, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
+	hr = m_device_ptr->CreateTexture2D(&td, nullptr, &m_preintegrated_brdf_texture);
+	if (FAILED(hr))
+		return hr;
+
+	CD3D11_RENDER_TARGET_VIEW_DESC rtvd(D3D11_RTV_DIMENSION_TEXTURE2D, td.Format);
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> render_target_ptr;
+	hr = m_device_ptr->CreateRenderTargetView(m_preintegrated_brdf_texture.Get(), &rtvd, &render_target_ptr);
+	if (FAILED(hr))
+		return hr;
+
+
+	D3D11_VIEWPORT viewport;
+	viewport.Width = static_cast<FLOAT>(PREINTEGRATED_BRDF_SIZE);
+	viewport.Height = static_cast<FLOAT>(PREINTEGRATED_BRDF_SIZE);
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+
+	ConstantBuffer cb;
+	cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity());
+	cb.projection = DirectX::XMMatrixTranspose(DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV2, 1, 0.2f, 0.8f));
+	cb.view = DirectX::XMMatrixTranspose(DirectX::XMMatrixLookAtLH(DirectX::XMVectorSet(0.5f, 0.5f, 0, 0), DirectX::XMVectorSet(0.5f, 0.5f, 1.0f, 0), DirectX::XMVectorSet(0, 1.0f, 0, 0)));
+
+	ID3D11RenderTargetView* renderTarget = render_target_ptr.Get();
+	m_device_context_ptr->RSSetViewports(1, &viewport);
+	m_device_context_ptr->OMSetRenderTargets(1, &renderTarget, nullptr);
+
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+
+
+	m_device_context_ptr->IASetVertexBuffers(0, 1, vertex_buffer.GetAddressOf(), &stride, &offset);
+	m_device_context_ptr->IASetIndexBuffer(index_buffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+
+	m_device_context_ptr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_device_context_ptr->IASetInputLayout(m_env_irradiance_vertex_shader.GetInputLayoutPtr());
+
+	m_device_context_ptr->VSSetShader(m_env_irradiance_vertex_shader.GetShaderPtr(), nullptr, 0);
+	m_device_context_ptr->VSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
+	m_device_context_ptr->PSSetShader(m_preintegrated_brdf_pixel_shader.GetShaderPtr(), nullptr, 0);
+
+	float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+	m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
+	m_device_context_ptr->ClearRenderTargetView(renderTarget, color);
+	m_device_context_ptr->DrawIndexed(indexCount, 0, 0);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvd = CD3D11_SHADER_RESOURCE_VIEW_DESC(D3D11_SRV_DIMENSION_TEXTURE2D, td.Format);
+	hr = m_device_ptr->CreateShaderResourceView(m_preintegrated_brdf_texture.Get(), &srvd, &m_preintegrated_brdf_texture_resource_view);
+	if (FAILED(hr))
+		return false;
+
+	return true;
+}
+
+
+
+
+
 bool Graphics::create_cubemap_from_texture(size_t cubemap_size, ID3D11Texture2D* dst, ID3D11ShaderResourceView* src, VertexShader* vs, PixelShader* ps, UINT mip_slice)
 {
 	HRESULT hr = S_OK;
@@ -644,12 +812,12 @@ bool Graphics::create_cubemap_from_texture(size_t cubemap_size, ID3D11Texture2D*
 		0, 1, 2,
 		2, 3, 0
 	};
-	UINT indexCount = 6;
+	size_t indexCount = 6;
 
 
 	D3D11_SUBRESOURCE_DATA initData;
 	ZeroMemory(&initData, sizeof(D3D11_SUBRESOURCE_DATA));
-	CD3D11_BUFFER_DESC vbd(sizeof(Vertex) * 4, D3D11_BIND_VERTEX_BUFFER);
+	CD3D11_BUFFER_DESC vbd(sizeof(Vertex) * ARRAYSIZE(vertices), D3D11_BIND_VERTEX_BUFFER);
 	CD3D11_BUFFER_DESC ibd(sizeof(WORD) * indexCount, D3D11_BIND_INDEX_BUFFER);
 	initData.pSysMem = indices;
 	hr = m_device_ptr->CreateBuffer(&ibd, &initData, index_buffer.GetAddressOf());
@@ -698,8 +866,8 @@ bool Graphics::create_cubemap_from_texture(size_t cubemap_size, ID3D11Texture2D*
 	m_device_context_ptr->IASetInputLayout(vs->GetInputLayoutPtr());
 
 
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
+	size_t stride = sizeof(Vertex);
+	size_t offset = 0;
 
 	m_device_context_ptr->IASetIndexBuffer(index_buffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
@@ -750,7 +918,7 @@ bool Graphics::create_cubemap_from_texture(size_t cubemap_size, ID3D11Texture2D*
 
 	D3D11_BOX box = CD3D11_BOX(0, 0, 0, cubemap_size, cubemap_size, 1);
 
-	for (UINT i = 0; i < 6; ++i)
+	for (size_t i = 0; i < 6; ++i)
 	{
 		if (square_left_bottom[i].x == square_right_top[i].x)
 		{
