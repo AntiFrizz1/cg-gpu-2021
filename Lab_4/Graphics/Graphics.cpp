@@ -105,9 +105,11 @@ void Graphics::RenderFrame()
 	m_device_context_ptr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	ConstantBuffer cb;
-	cb.world = DirectX::XMMatrixTranspose(m_world1);
+
+	cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z));
 	cb.view = DirectX::XMMatrixTranspose(m_view);
 	cb.projection = DirectX::XMMatrixTranspose(m_projection);
+
 	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
 	m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
 
@@ -166,7 +168,7 @@ void Graphics::RenderFrame()
 				0
 			));
 			mb.metalness = static_cast<float>(j) / (SPHERES_COUNT - 1);
-			mb.roughness = static_cast<float>(i) / (SPHERES_COUNT - 1);
+			mb.roughness = max(static_cast<float>(i) / (SPHERES_COUNT - 1), 0.001);
 			static const DirectX::XMFLOAT4 default_albedo = {0.95f, 0.64f, 0.54f, 1.0f};  // copper color
 			mb.albedo = default_albedo;
 

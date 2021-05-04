@@ -48,7 +48,8 @@ float NDG_GGXTR(float3 n, float3 h, float alpha)
 
 float G_SCHLICKGGX(float3 n, float3 v, float k)
 {
-    return dot(n, v) / (dot(n, v) * (1 - k) + k);
+    float value = max(dot(n, v), 0);
+    return value / (value * (1 - k) + k);
 }
 
 float G_func(float3 n, float3 v, float3 l, float k)
