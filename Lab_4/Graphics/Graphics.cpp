@@ -48,35 +48,48 @@ bool Graphics::Initialize(HWND hwnd, size_t width, size_t height)
 		return false;
 	}
 
+
 	if (!create_depth_stencil_buffer(m_width, m_height)) {
+		return false;
+	}
+
+	if (!compute_preintegrated_textures()) {
 		return false;
 	}
 
 	return true;
 }
 
+bool Graphics::compute_preintegrated_textures() {
+	Global::GetAnnotation().BeginEvent(L"Start Render Env Cubemap.");
+	if (!create_cubemap_texture()) 
+	{
+		Global::GetAnnotation().EndEvent();
+		return false;
+	}
+	Global::GetAnnotation().EndEvent();
+
+	Global::GetAnnotation().BeginEvent(L"Start Render irradiance texture.");
+	if (!create_irradiance_texture_from_cubemap()) 
+	{
+		Global::GetAnnotation().EndEvent();
+		return false;
+	}
+	Global::GetAnnotation().EndEvent();
+
+	return true;
+}
+
+
 void Graphics::RenderFrame()
 {
-	static bool flag = true;
-	if (flag) 
-	{
-		Global::GetAnnotation().BeginEvent(L"Start Render Env Cubemap.");
-
-		create_cubemap_texture();
-		Global::GetAnnotation().EndEvent();
-		Global::GetAnnotation().BeginEvent(L"Start Render irradiance texture.");
-		create_irradiance_texture_from_cubemap();
-		Global::GetAnnotation().EndEvent();
-		flag = false;
-	}
-
 	Global::GetAnnotation().BeginEvent(L"Start Render.");
 	float bgcolor[] = {0.0f, 0.0f, 1.0f, 1.0f};
 	ID3D11RenderTargetView* render_target = m_render_in_texture.GetTextureRenderTargetView();
 	D3D11_VIEWPORT viewport = m_render_in_texture.GetViewPort();
 	m_device_context_ptr->ClearRenderTargetView(render_target, bgcolor);
 	m_device_context_ptr->ClearRenderTargetView(m_render_taget_view_ptr.Get(), bgcolor);
-	m_device_context_ptr->ClearDepthStencilView(m_depthDSV_ptr.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
 
 	if (m_tone_maping_enable)
 	{
@@ -86,14 +99,17 @@ void Graphics::RenderFrame()
 	{
 		m_device_context_ptr->OMSetRenderTargets(1, m_render_taget_view_ptr.GetAddressOf(), m_depthDSV_ptr.Get());
 	}
+	m_device_context_ptr->ClearDepthStencilView(m_depthDSV_ptr.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	m_device_context_ptr->RSSetViewports(1, &viewport);
 	m_device_context_ptr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	ConstantBuffer cb;
-	cb.world = DirectX::XMMatrixTranspose(m_world1);
+
+	cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z));
 	cb.view = DirectX::XMMatrixTranspose(m_view);
 	cb.projection = DirectX::XMMatrixTranspose(m_projection);
+
 	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
 	m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
 
@@ -152,7 +168,7 @@ void Graphics::RenderFrame()
 				0
 			));
 			mb.metalness = static_cast<float>(j) / (SPHERES_COUNT - 1);
-			mb.roughness = static_cast<float>(i) / (SPHERES_COUNT - 1);
+			mb.roughness = max(static_cast<float>(i) / (SPHERES_COUNT - 1), 0.001);
 			static const DirectX::XMFLOAT4 default_albedo = {0.95f, 0.64f, 0.54f, 1.0f};  // copper color
 			mb.albedo = default_albedo;
 
@@ -404,8 +420,7 @@ bool Graphics::initilize_scene()
 			float x = RADIUS * n_x + m_position.x;
 			float y = RADIUS * n_y + m_position.y;
 			float z = RADIUS * n_z + m_position.z;
-
-			m_sphere_vertex.push_back({ XMFLOAT4(x, y, z, 1.0f), XMFLOAT3(n_x, n_y, n_z), XMFLOAT2(static_cast<float>(ind) / (SPHERE_PARTS), static_cast<float>(layer) / (SPHERE_PARTS)) });
+			m_sphere_vertex.push_back({ XMFLOAT4(x, y, z, 1.0f), XMFLOAT3(n_x, n_y, n_z), XMFLOAT2(static_cast<float>(ind) / (SPHERE_PARTS ), static_cast<float>(layer) / (SPHERE_PARTS)) });
 		}
 		if (layer > 0)
 		{
@@ -591,7 +606,7 @@ bool Graphics::create_cubemap_texture() {
 
 	m_device_context_ptr->GenerateMips(m_texture_resource_view.Get());
 	
-	return false;
+	return true;
 
 }
 
@@ -616,7 +631,7 @@ bool Graphics::create_irradiance_texture_from_cubemap() {
 	if (FAILED(hr))
 		return false;
 
-	return false;
+	return true;
 
 }
 
@@ -887,6 +902,8 @@ bool Graphics::OnResizeWindow(size_t width, size_t height)
 			return false;
 		}
 		return m_tone_maping.OnResizeWindow(width, height) && m_render_in_texture.Initialize(m_device_ptr, width, height);
+
+		
 	}
 	else
 	{

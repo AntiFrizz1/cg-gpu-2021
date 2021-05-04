@@ -42,13 +42,13 @@ public:
 	void SetPbrShaderType(PbrShaderType type) { m_cur_pbr_shader_type = type; }
 	bool OnResizeWindow(size_t width, size_t height);
 
-
 private:
 	bool initialize_directx(HWND hwnd, size_t width, size_t height);
 	bool initilize_shaders();
 	bool initilize_scene();
 	bool initialize_tone_maping();
 	bool initialize_lights();
+	bool compute_preintegrated_textures();
 	bool update_texture();
 	bool load_texture(const char* path);
 
@@ -68,6 +68,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_env_cubemap_texture_resource_view;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_env_irradiance_texture;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_env_irradiance_texture_resource_view;
+
+
+
+
 
 
 	ToneMaping m_tone_maping;
@@ -124,4 +128,6 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_depth_ptr;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depthDSV_ptr;
+
+	
 };
