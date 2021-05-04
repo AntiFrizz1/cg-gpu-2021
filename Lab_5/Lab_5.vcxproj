@@ -107,7 +107,8 @@
     </FxCompile>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)$(ProjectName)\*.cso"  "$(TargetDir)"   /y /r
-xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r</Command>
+xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -131,7 +132,8 @@ xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r</Command>
     </FxCompile>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)$(ProjectName)\*.cso"  "$(TargetDir)"   /y /r
-xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r</Command>
+xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -151,7 +153,8 @@ xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r</Command>
     </FxCompile>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)$(ProjectName)\*.cso"  "$(TargetDir)"   /y /r
-xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r</Command>
+xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -175,7 +178,8 @@ xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r</Command>
     </FxCompile>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)$(ProjectName)\*.cso"  "$(TargetDir)"   /y /r
-xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r</Command>
+xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

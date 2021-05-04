@@ -124,7 +124,8 @@ void Graphics::RenderFrame()
 	m_device_context_ptr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	ConstantBuffer cb;
-	cb.world = DirectX::XMMatrixTranspose(m_world1);
+
+	cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z));
 	cb.view = DirectX::XMMatrixTranspose(m_view);
 	cb.projection = DirectX::XMMatrixTranspose(m_projection);
 	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
@@ -190,7 +191,7 @@ void Graphics::RenderFrame()
 				0
 			));
 			mb.metalness = static_cast<float>(j) / (SPHERES_COUNT - 1);
-			mb.roughness = static_cast<float>(i) / (SPHERES_COUNT - 1);
+			mb.roughness = max(static_cast<float>(i) / (SPHERES_COUNT - 1), 0.001);
 			mb.albedo = m_default_colors[static_cast<int>(m_albedo_color)];
 
 			m_device_context_ptr->IASetVertexBuffers(0, 1, m_sphere.GetAddressOfVertexBuffer(), &stride, &offset);
