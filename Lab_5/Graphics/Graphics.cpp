@@ -632,13 +632,6 @@ bool Graphics::create_cubemap_texture() {
 	if (FAILED(hr))
 		return false;
 	
-	/*
-	if (!create_cubemap_from_texture(CUBE_MAP_SIZE, m_env_cubemap_texture.Get(), m_texture_resource_view.Get(), &m_env_cubemap_vertex_shader, &m_env_cubemap_pixel_shader, 0))
-	{
-		return false;
-	}
-	*/
-	
 	for (UINT i = 0; i < td.MipLevels; ++i)
 	{
 		if (!create_cubemap_from_texture(CUBE_MAP_SIZE / static_cast<size_t>(pow(2, i)), m_env_cubemap_texture.Get(), m_texture_resource_view.Get(), &m_env_cubemap_vertex_shader, &m_env_cubemap_pixel_shader, i))
@@ -648,10 +641,8 @@ bool Graphics::create_cubemap_texture() {
 
 	}
 	
-
-
 	
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvd = CD3D11_SHADER_RESOURCE_VIEW_DESC(D3D11_SRV_DIMENSION_TEXTURECUBE, td.Format);
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvd = CD3D11_SHADER_RESOURCE_VIEW_DESC(D3D11_SRV_DIMENSION_TEXTURECUBE, td.Format, 0, td.MipLevels);
 	hr = m_device_ptr->CreateShaderResourceView(m_env_cubemap_texture.Get(), &srvd, m_env_cubemap_texture_resource_view.GetAddressOf());
 	if (FAILED(hr))
 		return false;
@@ -678,7 +669,7 @@ bool Graphics::create_irradiance_texture_from_cubemap() {
 	}
 
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvd = CD3D11_SHADER_RESOURCE_VIEW_DESC(D3D11_SRV_DIMENSION_TEXTURECUBE, td.Format, 0, 1);
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvd = CD3D11_SHADER_RESOURCE_VIEW_DESC(D3D11_SRV_DIMENSION_TEXTURECUBE, td.Format, 0, td.MipLevels);
 	hr = m_device_ptr->CreateShaderResourceView(m_env_irradiance_texture.Get(), &srvd, m_env_irradiance_texture_resource_view.GetAddressOf());
 	if (FAILED(hr))
 		return false;
@@ -711,7 +702,7 @@ bool Graphics::create_prefiltered_color_texture() {
 	}
 
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvd = CD3D11_SHADER_RESOURCE_VIEW_DESC(D3D11_SRV_DIMENSION_TEXTURECUBE, td.Format, 0, 1);
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvd = CD3D11_SHADER_RESOURCE_VIEW_DESC(D3D11_SRV_DIMENSION_TEXTURECUBE, td.Format, 0, td.MipLevels);
 	hr = m_device_ptr->CreateShaderResourceView(m_prefiltered_color_texture.Get(), &srvd, m_prefiltered_color_texture_resource_view.GetAddressOf());
 	if (FAILED(hr))
 		return false;
