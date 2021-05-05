@@ -2,7 +2,7 @@
 #include "common_ibl_shader_func.fx"
 
 static const int SAMPLE_COUNT = 1024;
-static const float RESOLUTION = 128;
+static const float RESOLUTION = 512; // разрешение иcходной environment map
 
 TextureCube EnvironmentMap : register(t0);
 
@@ -46,10 +46,12 @@ float3 PrefilteredColor(float3 norm)
 float4 main(PS_INPUT input) : SV_TARGET
 {
 
+    //float3 norm = normalize(input.WorldPos);
     float3 norm = normalize(input.Norm);
-
+    norm.z = -norm.z;
     if (roughness < 0.1f)
         return float4(EnvironmentMap.SampleLevel(samLinear, norm, 0).xyz, 1.0f);
+    
     return float4(PrefilteredColor(norm), 1.0f);
 
 }
