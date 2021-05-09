@@ -27,9 +27,8 @@ void KeyboardProcessor::Process()
 			float& pos_y = camera_position.pos_y;
 			float& pos_z = camera_position.pos_z;
 
-			CameraPosition& camera = m_graphics_ptr->RefCamera();
-			DirectX::XMVECTOR forward_direct = DirectX::XMVector3Transform(camera.at, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon));
-			DirectX::XMVECTOR right_direct = DirectX::XMVector3Transform(camera.at, DirectX::XMMatrixRotationAxis({ 0,1,0 }, DirectX::XM_PI / 2.0) * DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon));
+			DirectX::XMVECTOR forward_direct = m_graphics_ptr->GetForwardCameraDir();
+			DirectX::XMVECTOR right_direct = m_graphics_ptr->GetRightCameraDir();
 			DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
 			
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'W')

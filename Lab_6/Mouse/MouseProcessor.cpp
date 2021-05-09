@@ -32,9 +32,7 @@ void MouseProcessor::Process()
 			float& pos_z = camera_position.pos_z;
 			DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
 
-			CameraPosition& camera = m_graphics_ptr->RefCamera();
-			DirectX::XMVECTOR up_direct = DirectX::XMVector3Transform(camera.at, DirectX::XMMatrixRotationAxis({ 1,0,0 }, DirectX::XM_PI / 2.0) * DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon));
-
+			DirectX::XMVECTOR up_direct = m_graphics_ptr->GetUpCameraDir();
 			if (mouse_event.GetType() == MouseEvent::EventType::WheelUp)
 			{
 				pos_x += XMVectorGetX(up_direct) * speed;

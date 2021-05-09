@@ -41,6 +41,9 @@ public:
 	void SwitchToneMaping() { m_tone_maping_enable ^= true; }
 	void SetPbrShaderType(PbrShaderType type) { m_cur_pbr_shader_type = type; }
 	bool OnResizeWindow(size_t width, size_t height);
+	DirectX::XMVECTOR GetForwardCameraDir();
+	DirectX::XMVECTOR GetRightCameraDir();
+	DirectX::XMVECTOR GetUpCameraDir();
 
 private:
 	bool initialize_directx(HWND hwnd, size_t width, size_t height);
