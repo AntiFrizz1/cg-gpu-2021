@@ -47,7 +47,7 @@ float4 main(PS_INPUT input) : SV_TARGET
 {
 
     float3 norm = normalize(input.Norm);
-
+    norm.z = -norm.z;
     if (roughness < 0.1f)
         return float4(EnvironmentMap.SampleLevel(samLinear, norm, 0).xyz, 1.0f);
     return float4(PrefilteredColor(norm), 1.0f);
