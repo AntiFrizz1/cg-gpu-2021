@@ -15,7 +15,7 @@ void KeyboardProcessor::Process()
 		while (!m_keyboard_ptr->IsKeyBufferEmpty())
 		{
 			KeyboardEvent key_event = m_keyboard_ptr->ReadKey();
-			float const speed = 0.5f;
+			float const speed = 0.25f;
 			std::wstring annotation_message = L"Start keyboard event " + key_event.GetKeyCode();
 			annotation_message += L"'";
 			Global::GetAnnotation().BeginEvent(annotation_message.c_str());
@@ -26,26 +26,42 @@ void KeyboardProcessor::Process()
 			float& pos_x = camera_position.pos_x;
 			float& pos_y = camera_position.pos_y;
 			float& pos_z = camera_position.pos_z;
+
+			CameraPosition& camera = m_graphics_ptr->RefCamera();
+			DirectX::XMVECTOR forward_direct = DirectX::XMVector3Transform(camera.at, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon));
+			DirectX::XMVECTOR right_direct = DirectX::XMVector3Transform(camera.at, DirectX::XMMatrixRotationAxis({ 0,1,0 }, DirectX::XM_PI / 2.0) * DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon));
 			DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
 			
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'W')
 			{
-				pos_y += speed;
+				pos_x += XMVectorGetX(forward_direct) * speed;
+				pos_y += XMVectorGetY(forward_direct) * speed;
+				pos_z += XMVectorGetZ(forward_direct) * speed;
+				//pos_y += speed;
 				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'S')
 			{
-				pos_y -= speed;
+				pos_x -= XMVectorGetX(forward_direct) * speed;
+				pos_y -= XMVectorGetY(forward_direct) * speed;
+				pos_z -= XMVectorGetZ(forward_direct) * speed;
+				//pos_y -= speed;
 				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'A')
 			{
-				pos_x -= speed;
+				pos_x -= XMVectorGetX(right_direct) * speed;
+				pos_y -= XMVectorGetY(right_direct) * speed;
+				pos_z -= XMVectorGetZ(right_direct) * speed;
+				//pos_x -= speed;
 				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'D')
 			{
-				pos_x += speed;
+				pos_x += XMVectorGetX(right_direct) * speed;
+				pos_y += XMVectorGetY(right_direct) * speed;
+				pos_z += XMVectorGetZ(right_direct) * speed;
+				// pos_x += speed;
 				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 
