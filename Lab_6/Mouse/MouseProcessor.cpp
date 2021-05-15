@@ -30,7 +30,6 @@ void MouseProcessor::Process()
 			float& pos_x = camera_position.pos_x;
 			float& pos_y = camera_position.pos_y;
 			float& pos_z = camera_position.pos_z;
-			DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
 
 			DirectX::XMVECTOR up_direct = m_graphics_ptr->GetUpCameraDir();
 			if (mouse_event.GetType() == MouseEvent::EventType::WheelUp)
@@ -38,16 +37,12 @@ void MouseProcessor::Process()
 				pos_x += XMVectorGetX(up_direct) * speed;
 				pos_y += XMVectorGetY(up_direct) * speed;
 				pos_z += XMVectorGetZ(up_direct) * speed;
-				//pos_z += speed;
-				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 			if (mouse_event.GetType() == MouseEvent::EventType::WheelDown)
 			{
 				pos_x -= XMVectorGetX(up_direct) * speed;
 				pos_y -= XMVectorGetY(up_direct) * speed;
 				pos_z -= XMVectorGetZ(up_direct) * speed;
-				//pos_z -= speed;
-				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 			if (m_mouse_pressed && mouse_event.GetType() == MouseEvent::EventType::RAW_MODE)
 			{
@@ -65,7 +60,6 @@ void MouseProcessor::Process()
 				{
 					lat = (float)DirectX::XM_PI / 2;
 				}
-				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
 			}
 		}
 	}

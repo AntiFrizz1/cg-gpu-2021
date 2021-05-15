@@ -29,40 +29,27 @@ void KeyboardProcessor::Process()
 
 			DirectX::XMVECTOR forward_direct = m_graphics_ptr->GetForwardCameraDir();
 			DirectX::XMVECTOR right_direct = m_graphics_ptr->GetRightCameraDir();
-			DirectX::XMMATRIX& view = m_graphics_ptr->RefView();
 			
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'W')
 			{
 				pos_x += XMVectorGetX(forward_direct) * speed;
 				pos_y += XMVectorGetY(forward_direct) * speed;
-				pos_z += XMVectorGetZ(forward_direct) * speed;
-				//pos_y += speed;
-				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
-			}
+				pos_z += XMVectorGetZ(forward_direct) * speed;			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'S')
 			{
 				pos_x -= XMVectorGetX(forward_direct) * speed;
 				pos_y -= XMVectorGetY(forward_direct) * speed;
-				pos_z -= XMVectorGetZ(forward_direct) * speed;
-				//pos_y -= speed;
-				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
-			}
+				pos_z -= XMVectorGetZ(forward_direct) * speed;			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'A')
 			{
 				pos_x -= XMVectorGetX(right_direct) * speed;
 				pos_y -= XMVectorGetY(right_direct) * speed;
-				pos_z -= XMVectorGetZ(right_direct) * speed;
-				//pos_x -= speed;
-				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
-			}
+				pos_z -= XMVectorGetZ(right_direct) * speed;			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'D')
 			{
 				pos_x += XMVectorGetX(right_direct) * speed;
 				pos_y += XMVectorGetY(right_direct) * speed;
-				pos_z += XMVectorGetZ(right_direct) * speed;
-				// pos_x += speed;
-				view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
-			}
+				pos_z += XMVectorGetZ(right_direct) * speed;			}
 
 			if (key_event.IsPress() && key_event.GetKeyCode() == '1')
 			{

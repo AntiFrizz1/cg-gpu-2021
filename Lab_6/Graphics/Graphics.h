@@ -42,8 +42,10 @@ public:
 	void SetPbrShaderType(PbrShaderType type) { m_cur_pbr_shader_type = type; }
 	bool OnResizeWindow(size_t width, size_t height);
 	DirectX::XMVECTOR GetForwardCameraDir();
+	DirectX::XMVECTOR GetBackwardCameraDir();
 	DirectX::XMVECTOR GetRightCameraDir();
 	DirectX::XMVECTOR GetUpCameraDir();
+	void UpdateCameraView();
 
 private:
 	bool initialize_directx(HWND hwnd, size_t width, size_t height);
