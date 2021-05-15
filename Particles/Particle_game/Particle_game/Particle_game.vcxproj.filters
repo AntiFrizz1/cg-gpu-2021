@@ -87,9 +87,6 @@
     <ClCompile Include="Graphics\DDSTextureLoader.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="Model.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h">
@@ -167,12 +164,6 @@
     <ClInclude Include="stb_image.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="Model.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="tiny_gltf.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="brdf_pixel_shader.hlsl" />
@@ -185,27 +176,20 @@
     <FxCompile Include="tone_pixel_shader.hlsl" />
     <FxCompile Include="tone_vertex_shader.hlsl" />
     <FxCompile Include="vertex_shader.hlsl" />
-    <FxCompile Include="env_pixel_shader.hlsl">
-      <Filter>Исходные файлы</Filter>
-    </FxCompile>
     <FxCompile Include="env_cubemap_pixel_shader.hlsl" />
     <FxCompile Include="env_cubemap_vertex_shader.hlsl" />
     <FxCompile Include="env_irradiance_pixel_shader.hlsl" />
     <FxCompile Include="env_irradiance_vertex_shader.hlsl" />
     <FxCompile Include="prefiltered_color_pixel_shader.hlsl" />
     <FxCompile Include="preintegrated_brdf_pixel_shader.hlsl" />
-    <FxCompile Include="model_pixel_shader.hlsl" />
-    <FxCompile Include="model_vertex_shader.hlsl" />
-    <FxCompile Include="model_shader_common.fx" />
+    <FxCompile Include="env_pixel_shader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="texture.jpg">
       <Filter>Файлы ресурсов</Filter>
     </Image>
-    <Image Include="texture.dds" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="texture_chinese_garden_1k.hdr" />
     <None Include="common_shader.fx" />
     <None Include="common_ibl_shader_func.fx" />
   </ItemGroup>

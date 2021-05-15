@@ -60,48 +60,10 @@ bool Graphics::Initialize(HWND hwnd, size_t width, size_t height)
 		return false;
 	}
 
-	if (!load_model()) {
-		return false;
-	}
 	return true;
 }
 
-bool Graphics::load_model() {
-	m_model_ptr = std::unique_ptr<Model>(new Model("Models/test_tube_rack/scene.gltf"));
-	m_model_ptr->SetVertexShaderPath(L"model_vertex_shader.hlsl");
-	m_model_ptr->SetPixelShaderPath(L"model_pixel_shader.hlsl");
-	m_model_ptr->SetScale(3.0f);
-	m_model_ptr->SetPosition(0.0f, -5.0f, -5.0f);
-	m_model_ptr->SetRotation(DirectX::XM_PI * 0.0f, DirectX::XM_PI * 0.25f, DirectX::XM_PI * 0.0f);
-	if (!m_model_ptr->Load(m_device_ptr.Get())) {
-		return false;
-	}
 
-	//m_model_ptr = std::unique_ptr<Model>(new Model("Models/test_tube_rack/scene.gltf"));
-	m_model_ptr = std::unique_ptr<Model>(new Model("Models/car_scene/scene.gltf"));
-	m_model_ptr->SetVertexShaderPath(L"model_vertex_shader.hlsl");
-	m_model_ptr->SetPixelShaderPath(L"model_pixel_shader.hlsl");
-	m_model_ptr->SetScale(0.05f);
-	m_model_ptr->SetPosition(0.0f, -5.0f, -5.0f);
-	m_model_ptr->SetRotation(DirectX::XM_PI * 0.0f, DirectX::XM_PI * 0.25f, DirectX::XM_PI * 0.0f);
-	if (!m_model_ptr->Load(m_device_ptr.Get())) {
-		return false;
-	}
-
-	/*
-	m_model_ptr = std::unique_ptr<Model>(new Model("Models/room/scene.gltf"));
-	m_model_ptr->SetVertexShaderPath(L"model_vertex_shader.hlsl");
-	m_model_ptr->SetPixelShaderPath(L"model_pixel_shader.hlsl");
-	m_model_ptr->SetScale(0.05f);
-	m_model_ptr->SetPosition(5.0f, -5.0f, -5.0f);
-	m_model_ptr->SetRotation(DirectX::XM_PI * 0.0f, DirectX::XM_PI * 0.25f, DirectX::XM_PI * 0.0f);
-	if (!m_model_ptr->Load(m_device_ptr.Get())) {
-		return false;
-	}
-
-	*/
-	return true;
-}
 bool Graphics::compute_preintegrated_textures() {
 	Global::GetAnnotation().BeginEvent(L"Start Render Env Cubemap.");
 	if (!create_cubemap_texture()) 
@@ -236,44 +198,8 @@ void Graphics::render_sphere_grid()
 	Global::GetAnnotation().EndEvent();
 }
 
-
-//void Graphics::render_model(std::unique_ptr<Model>& model_ptr) 
-void Graphics::render_model(Model* model_ptr)
-{
-	Global::GetAnnotation().BeginEvent(L"Render model");
-
-
-	ConstantBuffer cb;
-	cb.view = DirectX::XMMatrixTranspose(m_view);
-	cb.projection = DirectX::XMMatrixTranspose(m_projection);
-	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
-
-	m_device_context_ptr->VSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
-
-	m_device_context_ptr->PSSetShader(m_env_pixel_shader.GetShaderPtr(), NULL, 0);
-	m_device_context_ptr->PSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
-	m_device_context_ptr->PSSetConstantBuffers(1, 1, m_lights_buffer.GetAddressOf());
-
-	m_device_context_ptr->PSSetShaderResources(0, 1, m_env_irradiance_texture_resource_view.GetAddressOf());
-	m_device_context_ptr->PSSetShaderResources(1, 1, m_prefiltered_color_texture_resource_view.GetAddressOf());
-	m_device_context_ptr->PSSetShaderResources(2, 1, m_preintegrated_brdf_texture_resource_view.GetAddressOf());
-
-	m_device_context_ptr->PSSetSamplers(0, 1, m_sampler_linear.GetAddressOf());
-	m_device_context_ptr->PSSetSamplers(1, 1, m_sampler_clamp.GetAddressOf());
-
-	//ID3D11RenderTargetView* render_target = m_render_in_texture.GetTextureRenderTargetView();
-	Model::ShadersSlots slots = { 3, 4, 5, 2, 0, 2 };
-	//m_device_context_ptr->OMSetRenderTargets(1, &render_target, m_depthDSV_ptr.Get());
-	DirectX::XMFLOAT3 camera;
-	XMStoreFloat3(&camera, GetForwardCameraDir());
-	model_ptr->Render(m_device_context_ptr.Get(), cb, m_constant_buffer.Get(), m_material_buffer.Get(), slots, camera);
-
-	Global::GetAnnotation().EndEvent();
-}
 void Graphics::RenderFrame()
 {
-	
-
 	Global::GetAnnotation().BeginEvent(L"Start Render.");
 	UpdateCameraView();
 	float bgcolor[] = {0.0f, 0.0f, 1.0f, 1.0f};
@@ -314,10 +240,7 @@ void Graphics::RenderFrame()
 	m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
 
 	render_env_sphere();
-	//render_sphere_grid();
-	render_model(m_model_ptr.get());
-
-
+	render_sphere_grid();
 	
 	m_viewport.Width = static_cast<FLOAT>(m_width);
 	m_viewport.Height = static_cast<FLOAT>(m_height);

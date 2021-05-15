@@ -13,7 +13,6 @@
 #include "Sphere.h"
 #include "WorldCameraPosition.h"
 #include "ConstantBuffer.h"
-#include "../Model.h"
 //#pragma comment (lib, "d3d11.lib")
 //#pragma comment (lib, "DirectXTK.lib")
 
@@ -66,7 +65,6 @@ private:
 	bool create_preintegrated_brdf_texture();
 	void render_env_sphere();
 	void render_sphere_grid();
-	void render_model(Model* model_ptr);
 
 	Microsoft::WRL::ComPtr<ID3D11Device>             m_device_ptr;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext>      m_device_context_ptr;
@@ -164,9 +162,6 @@ private:
 	};
 
 	AlbedoColors m_albedo_color = AlbedoColors::IRON;
-
-	std::unique_ptr<Model> m_model_ptr;
-
 
 
 
