@@ -13,6 +13,8 @@
 #include "Sphere.h"
 #include "WorldCameraPosition.h"
 #include "ConstantBuffer.h"
+#include "ConstantBuffer.h"
+#include "../CameraOld.h"
 //#pragma comment (lib, "d3d11.lib")
 //#pragma comment (lib, "DirectXTK.lib")
 
@@ -33,18 +35,13 @@ public:
 	DirectX::XMMATRIX& RefWorld() { return m_world1; }
 	DirectX::XMMATRIX& RefView() { return m_view; }
 	DirectX::XMMATRIX& RefProjection() { return m_projection; }
-	CameraPosition& RefCamera() { return m_camera; }
-	WorldCameraPosition& RefWorldCameraPosition() { return m_camera_position; }
 	void ChangeLightsIntencity(size_t ind);
 	void SetToneMaping(bool enable) { m_tone_maping_enable = enable; }
 	void SwitchToneMaping() { m_tone_maping_enable ^= true; }
 	void SetPbrShaderType(PbrShaderType type) { m_cur_pbr_shader_type = type; }
 	bool OnResizeWindow(size_t width, size_t height);
-	DirectX::XMVECTOR GetForwardCameraDir();
-	DirectX::XMVECTOR GetBackwardCameraDir();
-	DirectX::XMVECTOR GetRightCameraDir();
-	DirectX::XMVECTOR GetUpCameraDir();
 	void UpdateCameraView();
+	CameraOld* GetCamera() { return &m_camera; }
 
 private:
 	bool initialize_directx(HWND hwnd, size_t width, size_t height);
@@ -55,7 +52,6 @@ private:
 	bool compute_preintegrated_textures();
 	bool update_texture();
 	bool load_texture(const char* path);
-	bool load_model();
 
 	bool create_cubemap_texture();
 	bool create_cubemap_from_texture(size_t cubemap_size, ID3D11Texture2D* dst, ID3D11ShaderResourceView* src, VertexShader* vs, PixelShader* ps, UINT mip_slice);
@@ -134,8 +130,7 @@ private:
 	DirectX::XMMATRIX m_view;
 	DirectX::XMMATRIX m_projection;
 
-	CameraPosition m_camera;
-	WorldCameraPosition m_camera_position;
+	CameraOld m_camera;
 	bool m_tone_maping_enable{ true };
 	size_t m_width;
 	size_t m_height;

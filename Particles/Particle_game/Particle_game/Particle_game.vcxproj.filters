@@ -87,6 +87,12 @@
     <ClCompile Include="Graphics\DDSTextureLoader.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraOld.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h">
@@ -192,5 +198,10 @@
   <ItemGroup>
     <None Include="common_shader.fx" />
     <None Include="common_ibl_shader_func.fx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Particle_game.rc">
+      <Filter>Файлы ресурсов</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

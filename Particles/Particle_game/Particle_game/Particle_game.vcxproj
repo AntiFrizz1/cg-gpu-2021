@@ -205,6 +205,8 @@ xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraOld.cpp" />
     <ClCompile Include="Global.cpp" />
     <ClCompile Include="Graphics\AverageLuminanceCalculator.cpp" />
     <ClCompile Include="Engine.cpp" />
@@ -228,6 +230,8 @@ xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     <ClCompile Include="WinErrorLogger.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraOld.h" />
     <ClInclude Include="Global.h" />
     <ClInclude Include="Graphics\AverageLuminanceCalculator.h" />
     <ClInclude Include="Graphics\CameraPosition.h" />

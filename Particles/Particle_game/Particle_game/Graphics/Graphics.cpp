@@ -108,10 +108,11 @@ void Graphics::render_env_sphere()
 
 
 	ConstantBuffer cb;
-	cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z));
+	DirectX::XMFLOAT3 camera_pos = m_camera.GetPosition();
+	cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(camera_pos.x, camera_pos.y, camera_pos.z));
 	cb.view = DirectX::XMMatrixTranspose(m_view);
 	cb.projection = DirectX::XMMatrixTranspose(m_projection);
-	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
+	cb.eye = DirectX::XMFLOAT4(camera_pos.x, camera_pos.y, camera_pos.z, 0);
 	m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
 	m_device_context_ptr->IASetInputLayout(m_vertex_shader.GetInputLayoutPtr());
 	UINT stride = sizeof(Vertex);
@@ -171,7 +172,8 @@ void Graphics::render_sphere_grid()
 	ConstantBuffer cb;
 	cb.view = DirectX::XMMatrixTranspose(m_view);
 	cb.projection = DirectX::XMMatrixTranspose(m_projection);
-	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
+	DirectX::XMFLOAT3 camera_pos = m_camera.GetPosition();
+	cb.eye = DirectX::XMFLOAT4(camera_pos.x, camera_pos.y, camera_pos.z, 0.0f);
 
 	MaterialConstantBuffer mb;
 	int constexpr SPHERES_COUNT = 9;
@@ -236,7 +238,8 @@ void Graphics::RenderFrame()
 	cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity());
 	cb.view = DirectX::XMMatrixTranspose(m_view);
 	cb.projection = DirectX::XMMatrixTranspose(m_projection);
-	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
+	DirectX::XMFLOAT3 camera_pos = m_camera.GetPosition();
+	cb.eye = DirectX::XMFLOAT4(camera_pos.x, camera_pos.y, camera_pos.z, 0.0f);
 	m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
 
 	render_env_sphere();
@@ -456,7 +459,7 @@ bool Graphics::initilize_scene()
 	using namespace DirectX;
 	DirectX::XMFLOAT3 m_position{ 0.0f, 0.0f, 0.0f };
 	static size_t constexpr SPHERE_PARTS = 100;
-	static float constexpr RADIUS = 50.f;
+	static float constexpr RADIUS = 90.f;
 	using namespace DirectX;
 	float delta_tetha = DirectX::XM_PI / SPHERE_PARTS; //thetta
 	float delta_phi = 2 * DirectX::XM_PI / SPHERE_PARTS;
@@ -589,18 +592,11 @@ bool Graphics::initilize_scene()
 	}
 
 	m_world1 = DirectX::XMMatrixIdentity();
-	m_view = DirectX::XMMatrixLookAtLH(m_camera.eye, m_camera.at, m_camera.up);
+	m_view = m_camera.GetView();
 	m_projection = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV2, m_width / (FLOAT)m_height, 0.01f, 100.0f);
 
-	/*
-	hr = CreateDDSTextureFromFile(m_device_ptr.Get(), L"texture.dds", nullptr, m_texture_resource_view.GetAddressOf());
-	if (FAILED(hr))
-		return false;
-	*/
 	if (!load_texture("EnvTextures/the_sky_is_on_fire_1k.hdr"))
-	//if (!load_texture("EnvTextures/kloppenheim_06_1k.hdr"))
-	//if (!load_texture("EnvTextures/evening_road_01_1k.hdr"))
-	//if (!load_texture("EnvTextures/kiara_1_dawn_1k.hdr"))
+
 	{
 		return false;
 	}
@@ -1117,40 +1113,6 @@ bool Graphics::OnResizeWindow(size_t width, size_t height)
 	}
 }
 
-
-DirectX::XMVECTOR Graphics::GetForwardCameraDir() {
-	float lon = m_camera_position.lon;
-	float lat = m_camera_position.lat;
-	return DirectX::XMVector3Transform(m_camera.at, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon));
-}
-
-DirectX::XMVECTOR Graphics::GetBackwardCameraDir() {
-	float lon = m_camera_position.lon;
-	float lat = m_camera_position.lat;
-	return DirectX::XMVector3Transform(m_camera.at, DirectX::XMMatrixRotationAxis({ 0,1,0 }, DirectX::XM_PI) * DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon));
-}
-
-DirectX::XMVECTOR Graphics::GetRightCameraDir() {
-	float lon = m_camera_position.lon;
-	float lat = m_camera_position.lat;
-
-	return DirectX::XMVector3Transform(m_camera.at, DirectX::XMMatrixRotationAxis({ 0,1,0 }, DirectX::XM_PI / 2.0) * DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon));
-
-}
-DirectX::XMVECTOR Graphics::GetUpCameraDir() {
-	float lon = m_camera_position.lon;
-	float lat = m_camera_position.lat;
-	return  DirectX::XMVector3Transform(m_camera.at, DirectX::XMMatrixRotationAxis({ 1,0,0 }, DirectX::XM_PI / 2.0) * DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon));
-
-}
-
 void Graphics::UpdateCameraView() {
-
-	float lon = m_camera_position.lon;
-	float lat = m_camera_position.lat;
-	float pos_x = m_camera_position.pos_x;
-	float pos_y = m_camera_position.pos_y;
-	float pos_z = m_camera_position.pos_z;
-	m_view = DirectX::XMMatrixInverse(NULL, DirectX::XMMatrixRotationAxis({ 1,0,0 }, lat) * DirectX::XMMatrixRotationAxis({ 0,1,0 }, lon) * DirectX::XMMatrixTranslation(pos_x, pos_y, pos_z));
-
+	m_view = m_camera.GetView();
 }

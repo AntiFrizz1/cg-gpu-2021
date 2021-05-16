@@ -19,37 +19,23 @@ void KeyboardProcessor::Process()
 			std::wstring annotation_message = L"Start keyboard event " + key_event.GetKeyCode();
 			annotation_message += L"'";
 			Global::GetAnnotation().BeginEvent(annotation_message.c_str());
-			
-			auto& camera_position = m_graphics_ptr->RefWorldCameraPosition();
-			float& lon = camera_position.lon;
-			float& lat = camera_position.lat;
-			float& pos_x = camera_position.pos_x;
-			float& pos_y = camera_position.pos_y;
-			float& pos_z = camera_position.pos_z;
-
-			DirectX::XMVECTOR forward_direct = m_graphics_ptr->GetForwardCameraDir();
-			DirectX::XMVECTOR right_direct = m_graphics_ptr->GetRightCameraDir();
-			
+			CameraOld* camera = m_graphics_ptr->GetCamera();
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'W')
 			{
-				pos_x += XMVectorGetX(forward_direct) * speed;
-				pos_y += XMVectorGetY(forward_direct) * speed;
-				pos_z += XMVectorGetZ(forward_direct) * speed;			}
+				camera->MoveForvard(speed);
+			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'S')
 			{
-				pos_x -= XMVectorGetX(forward_direct) * speed;
-				pos_y -= XMVectorGetY(forward_direct) * speed;
-				pos_z -= XMVectorGetZ(forward_direct) * speed;			}
+				camera->MoveForvard(-speed);
+			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'A')
 			{
-				pos_x -= XMVectorGetX(right_direct) * speed;
-				pos_y -= XMVectorGetY(right_direct) * speed;
-				pos_z -= XMVectorGetZ(right_direct) * speed;			}
+				camera->MoveRight(-speed);
+			}
 			if (key_event.IsPress() && key_event.GetKeyCode() == 'D')
 			{
-				pos_x += XMVectorGetX(right_direct) * speed;
-				pos_y += XMVectorGetY(right_direct) * speed;
-				pos_z += XMVectorGetZ(right_direct) * speed;			}
+				camera->MoveRight(speed);
+			}
 
 			if (key_event.IsPress() && key_event.GetKeyCode() == '1')
 			{
