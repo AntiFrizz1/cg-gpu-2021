@@ -1,0 +1,11 @@
+Model Information:
+* title:	Test Tube Rack
+* source:	https://sketchfab.com/3d-models/test-tube-rack-f09bcbfe529e4314a1acbf7b7d1e867f
+* author:	Harry Bond (https://sketchfab.com/hbond)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Test Tube Rack" (https://sketchfab.com/3d-models/test-tube-rack-f09bcbfe529e4314a1acbf7b7d1e867f) by Harry Bond (https://sketchfab.com/hbond) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

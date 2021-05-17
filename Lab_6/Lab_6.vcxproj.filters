@@ -87,6 +87,9 @@
     <ClCompile Include="Graphics\DDSTextureLoader.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Graphics\Model.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h">
@@ -164,6 +167,12 @@
     <ClInclude Include="stb_image.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="tiny_gltf.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\Model.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="brdf_pixel_shader.hlsl" />
@@ -185,6 +194,10 @@
     <FxCompile Include="env_irradiance_vertex_shader.hlsl" />
     <FxCompile Include="prefiltered_color_pixel_shader.hlsl" />
     <FxCompile Include="preintegrated_brdf_pixel_shader.hlsl" />
+    <FxCompile Include="model_vertex_shader.hlsl" />
+    <FxCompile Include="model_shader_common.fx" />
+    <FxCompile Include="model_pixel_shader.hlsl" />
+    <FxCompile Include="model_emissive_pixel_shader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="texture.jpg">

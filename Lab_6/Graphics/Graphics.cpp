@@ -59,6 +59,10 @@ bool Graphics::Initialize(HWND hwnd, size_t width, size_t height)
 		return false;
 	}
 
+	if (!load_model())
+	{
+		return false;
+	}
 	return true;
 }
 
@@ -100,28 +104,9 @@ bool Graphics::compute_preintegrated_textures() {
 }
 
 
-void Graphics::RenderFrame()
+void Graphics::render_env_sphere()
 {
-	Global::GetAnnotation().BeginEvent(L"Start Render.");
-	float bgcolor[] = {0.0f, 0.0f, 1.0f, 1.0f};
-	ID3D11RenderTargetView* render_target = m_render_in_texture.GetTextureRenderTargetView();
-	D3D11_VIEWPORT viewport = m_render_in_texture.GetViewPort();
-	m_device_context_ptr->ClearRenderTargetView(render_target, bgcolor);
-	m_device_context_ptr->ClearRenderTargetView(m_render_taget_view_ptr.Get(), bgcolor);
-
-
-	if (m_tone_maping_enable)
-	{
-		m_device_context_ptr->OMSetRenderTargets(1, &render_target, m_depthDSV_ptr.Get());
-	}
-	else
-	{
-		m_device_context_ptr->OMSetRenderTargets(1, m_render_taget_view_ptr.GetAddressOf(), m_depthDSV_ptr.Get());
-	}
-	m_device_context_ptr->ClearDepthStencilView(m_depthDSV_ptr.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-
-	m_device_context_ptr->RSSetViewports(1, &viewport);
-	m_device_context_ptr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Global::GetAnnotation().BeginEvent(L"Render Env. Sphere");
 
 	ConstantBuffer cb;
 	cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixTranslation(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z));
@@ -129,33 +114,39 @@ void Graphics::RenderFrame()
 	cb.projection = DirectX::XMMatrixTranspose(m_projection);
 	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
 	m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
-
-	LightsConstantBuffer lb;
-	for (int m = 0; m < NUM_OF_LIGHT; m++) 
-	{
-		lb.vLightDir[m] = m_vLightDirs[m];
-		lb.vLightColor[m] = m_vLightColors[m];
-		lb.vLightIntencity[m] = DirectX::XMFLOAT4(m_vLightIntencitys[m], 0.0f, 0.0f, 0.0f);
-	}
-	m_device_context_ptr->UpdateSubresource(m_lights_buffer.Get(), 0, nullptr, &lb, 0, 0);
-
-
 	m_device_context_ptr->IASetInputLayout(m_vertex_shader.GetInputLayoutPtr());
-
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 	m_device_context_ptr->IASetVertexBuffers(0, 1, m_vertex_buffer.GetAddressOf(), &stride, &offset);
 	m_device_context_ptr->IASetIndexBuffer(m_index_buffer.Get(), DXGI_FORMAT_R16_UINT, 0);
-
 	m_device_context_ptr->VSSetShader(m_vertex_shader.GetShaderPtr(), NULL, 0);
 	m_device_context_ptr->VSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
+	m_device_context_ptr->PSSetShader(m_env_pixel_shader.GetShaderPtr(), NULL, 0);
+	m_device_context_ptr->PSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
+	m_device_context_ptr->PSSetShaderResources(0, 1, m_texture_resource_view.GetAddressOf());
+	m_device_context_ptr->PSSetSamplers(0, 1, m_sampler_linear.GetAddressOf());
+	m_device_context_ptr->DrawIndexed(m_sphere_indicies.size(), 0, 0);
+	Global::GetAnnotation().EndEvent();
+
+}
+void Graphics::render_sphere_grid()
+{
+	Global::GetAnnotation().BeginEvent(L"Render spheres grid");
+	m_device_context_ptr->IASetInputLayout(m_vertex_shader.GetInputLayoutPtr());
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+	m_device_context_ptr->IASetVertexBuffers(0, 1, m_vertex_buffer.GetAddressOf(), &stride, &offset);
+	m_device_context_ptr->IASetIndexBuffer(m_index_buffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+	m_device_context_ptr->VSSetShader(m_vertex_shader.GetShaderPtr(), NULL, 0);
+	m_device_context_ptr->VSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
+
 	m_device_context_ptr->PSSetShader(m_env_pixel_shader.GetShaderPtr(), NULL, 0);
 	m_device_context_ptr->PSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
 	m_device_context_ptr->PSSetConstantBuffers(1, 1, m_lights_buffer.GetAddressOf());
 	m_device_context_ptr->PSSetConstantBuffers(2, 1, m_material_buffer.GetAddressOf());
 	m_device_context_ptr->PSSetShaderResources(0, 1, m_texture_resource_view.GetAddressOf());
 	m_device_context_ptr->PSSetSamplers(0, 1, m_sampler_linear.GetAddressOf());
-	m_device_context_ptr->DrawIndexed(m_sphere_indicies.size(), 0, 0);
+
 
 	switch (m_cur_pbr_shader_type)
 	{
@@ -178,6 +169,11 @@ void Graphics::RenderFrame()
 		m_device_context_ptr->PSSetShader(m_fresnel_pixel_shader.GetShaderPtr(), NULL, 0);
 	}
 
+	ConstantBuffer cb;
+	cb.view = DirectX::XMMatrixTranspose(m_view);
+	cb.projection = DirectX::XMMatrixTranspose(m_projection);
+	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
+
 	MaterialConstantBuffer mb;
 	int constexpr SPHERES_COUNT = 9;
 	for (int i = 0; i < SPHERES_COUNT; ++i)
@@ -197,12 +193,85 @@ void Graphics::RenderFrame()
 			m_device_context_ptr->IASetIndexBuffer(m_sphere.GetIndexBuffer(), DXGI_FORMAT_R16_UINT, 0);
 			m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
 			m_device_context_ptr->UpdateSubresource(m_material_buffer.Get(), 0, nullptr, &mb, 0, 0);
-			//m_device_context_ptr->PSSetShaderResources(1, 1, m_env_irradiance_texture_resource_view.GetAddressOf());
 			m_device_context_ptr->DrawIndexed(m_sphere.GetIniciesSize(), 0, 0);
 		}
 	}
+	Global::GetAnnotation().EndEvent();
+}
+
+void Graphics::render_model()
+{
+	Global::GetAnnotation().BeginEvent(L"Render model");
+
+	ConstantBuffer cb;
+	cb.view = DirectX::XMMatrixTranspose(m_view);
+	cb.projection = DirectX::XMMatrixTranspose(m_projection);
+	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
+
+	m_device_context_ptr->VSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
+
+	m_device_context_ptr->PSSetShader(m_env_pixel_shader.GetShaderPtr(), NULL, 0);
+	m_device_context_ptr->PSSetConstantBuffers(0, 1, m_constant_buffer.GetAddressOf());
+	m_device_context_ptr->PSSetConstantBuffers(1, 1, m_lights_buffer.GetAddressOf());
+
+	m_device_context_ptr->PSSetShaderResources(0, 1, m_env_irradiance_texture_resource_view.GetAddressOf());
+	m_device_context_ptr->PSSetShaderResources(1, 1, m_prefiltered_color_texture_resource_view.GetAddressOf());
+	m_device_context_ptr->PSSetShaderResources(2, 1, m_preintegrated_brdf_texture_resource_view.GetAddressOf());
+
+	m_device_context_ptr->PSSetSamplers(0, 1, m_sampler_linear.GetAddressOf());
+	m_device_context_ptr->PSSetSamplers(1, 1, m_sampler_clamp.GetAddressOf());
+
+	DirectX::XMFLOAT3 camera;
+	XMStoreFloat3(&camera, GetForwardCameraDir());
+	m_model.Render(m_device_context_ptr.Get(), cb, m_constant_buffer.Get(), m_material_buffer.Get(), camera);
+
+	Global::GetAnnotation().EndEvent();
+}
+
+void Graphics::RenderFrame()
+{
+	Global::GetAnnotation().BeginEvent(L"Start Render.");
 	UpdateCameraView();
-	
+	float bgcolor[] = { 0.0f, 0.0f, 1.0f, 1.0f };
+	ID3D11RenderTargetView* render_target = m_render_in_texture.GetTextureRenderTargetView();
+	D3D11_VIEWPORT viewport = m_render_in_texture.GetViewPort();
+	m_device_context_ptr->ClearRenderTargetView(render_target, bgcolor);
+	m_device_context_ptr->ClearRenderTargetView(m_render_taget_view_ptr.Get(), bgcolor);
+
+
+	if (m_tone_maping_enable)
+	{
+		m_device_context_ptr->OMSetRenderTargets(1, &render_target, m_depthDSV_ptr.Get());
+	}
+	else
+	{
+		m_device_context_ptr->OMSetRenderTargets(1, m_render_taget_view_ptr.GetAddressOf(), m_depthDSV_ptr.Get());
+	}
+	m_device_context_ptr->ClearDepthStencilView(m_depthDSV_ptr.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	m_device_context_ptr->RSSetViewports(1, &viewport);
+	m_device_context_ptr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+	LightsConstantBuffer lb;
+	for (int m = 0; m < NUM_OF_LIGHT; m++)
+	{
+		lb.vLightDir[m] = m_vLightDirs[m];
+		lb.vLightColor[m] = m_vLightColors[m];
+		lb.vLightIntencity[m] = DirectX::XMFLOAT4(m_vLightIntencitys[m], 0.0f, 0.0f, 0.0f);
+	}
+	m_device_context_ptr->UpdateSubresource(m_lights_buffer.Get(), 0, nullptr, &lb, 0, 0);
+
+	ConstantBuffer cb;
+	cb.world = DirectX::XMMatrixTranspose(DirectX::XMMatrixIdentity());
+	cb.view = DirectX::XMMatrixTranspose(m_view);
+	cb.projection = DirectX::XMMatrixTranspose(m_projection);
+	cb.eye = DirectX::XMFLOAT4(m_camera_position.pos_x, m_camera_position.pos_y, m_camera_position.pos_z, 0);
+	m_device_context_ptr->UpdateSubresource(m_constant_buffer.Get(), 0, nullptr, &cb, 0, 0);
+	// TODO: check gltf files
+	render_env_sphere();
+	render_model();
+
 	m_viewport.Width = static_cast<FLOAT>(m_width);
 	m_viewport.Height = static_cast<FLOAT>(m_height);
 	m_viewport.MinDepth = 0.0f;
@@ -558,7 +627,7 @@ bool Graphics::initilize_scene()
 	if (FAILED(hr))
 		return false;
 	*/
-	if (!load_texture("the_sky_is_on_fire_1k.hdr"))
+	if (!load_texture("EnvTextures/the_sky_is_on_fire_1k.hdr"))
 	//if (!load_texture("kloppenheim_06_1k.hdr"))
 	//if (!load_texture("evening_road_01_1k.hdr"))
 	//if (!load_texture("kiara_1_dawn_1k.hdr"))
@@ -1029,6 +1098,21 @@ bool Graphics::create_depth_stencil_buffer(size_t width, size_t height)
 	}
 
 	return SUCCEEDED(hr);
+}
+
+bool Graphics::load_model()
+{
+	m_model.SetVertexShaderPath(L"model_vertex_shader.cso");
+	m_model.SetPixelShaderPath(L"model_pixel_shader.hlsl");
+	m_model.SetEmissivePixelShaderPath(L"model_emissive_pixel_shader.cso");
+	m_model.SetScale(3.0f);
+	m_model.SetPosition(0.0f, -5.0f, -5.0f);
+	m_model.SetRotation(DirectX::XM_PI * 0.0f, DirectX::XM_PI * 0.25f, DirectX::XM_PI * 0.0f);
+	if (!m_model.Load(m_device_ptr, "Models/test_tube_rack/scene.gltf"))
+	{
+		return false;
+	}
+	return true;
 }
 
 bool Graphics::OnResizeWindow(size_t width, size_t height)

@@ -12,7 +12,7 @@
 #include "ToneMaping.h"
 #include "Sphere.h"
 #include "WorldCameraPosition.h"
-#include "ConstantBuffer.h"
+#include "Model.h"
 
 //#pragma comment (lib, "d3d11.lib")
 //#pragma comment (lib, "DirectXTK.lib")
@@ -56,6 +56,7 @@ private:
 	bool compute_preintegrated_textures();
 	bool update_texture();
 	bool load_texture(const char* path);
+	bool load_model();
 
 	bool create_cubemap_texture();
 	bool create_cubemap_from_texture(size_t cubemap_size, ID3D11Texture2D* dst, ID3D11ShaderResourceView* src, VertexShader* vs, PixelShader* ps, UINT mip_slice);
@@ -63,7 +64,10 @@ private:
 	bool create_prefiltered_color_texture();
 	bool create_depth_stencil_buffer(size_t width, size_t height);
 	bool create_preintegrated_brdf_texture();
-
+	
+	void render_env_sphere();
+	void render_sphere_grid();
+	void render_model();
 
 	Microsoft::WRL::ComPtr<ID3D11Device>             m_device_ptr;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext>      m_device_context_ptr;
@@ -110,6 +114,8 @@ private:
 	Sphere m_sphere;
 	std::vector<Vertex> m_sphere_vertex;
 	std::vector<WORD> m_sphere_indicies;
+
+	Model m_model;
 
 	DirectX::XMFLOAT4 m_vLightDirs[NUM_OF_LIGHT];
 	DirectX::XMFLOAT4 m_vLightColors[NUM_OF_LIGHT];
@@ -161,8 +167,4 @@ private:
 	};
 
 	AlbedoColors m_albedo_color = AlbedoColors::IRON;
-
-
-
-
 };

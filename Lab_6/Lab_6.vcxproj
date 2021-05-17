@@ -107,8 +107,11 @@
     </FxCompile>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)$(ProjectName)\*.cso"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.hlsl"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.fx"  "$(TargetDir)"   /y /r
 xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r
-xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
+xcopy "$(SolutionDir)$(ProjectName)\EnvTextures\*.hdr"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\Models"  "$(TargetDir)Models"   /y /r /s /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -132,8 +135,11 @@ xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     </FxCompile>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)$(ProjectName)\*.cso"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.hlsl"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.fx"  "$(TargetDir)"   /y /r
 xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r
-xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
+xcopy "$(SolutionDir)$(ProjectName)\EnvTextures\*.hdr"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\Models"  "$(TargetDir)Models"   /y /r /s /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -153,8 +159,11 @@ xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     </FxCompile>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)$(ProjectName)\*.cso"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.hlsl"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.fx"  "$(TargetDir)"   /y /r
 xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r
-xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
+xcopy "$(SolutionDir)$(ProjectName)\EnvTextures\*.hdr"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\Models"  "$(TargetDir)Models"   /y /r /s /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -178,8 +187,11 @@ xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     </FxCompile>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)$(ProjectName)\*.cso"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.hlsl"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\*.fx"  "$(TargetDir)"   /y /r
 xcopy "$(SolutionDir)$(ProjectName)\*.dds"  "$(TargetDir)"   /y /r
-xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
+xcopy "$(SolutionDir)$(ProjectName)\EnvTextures\*.hdr"  "$(TargetDir)"   /y /r
+xcopy "$(SolutionDir)$(ProjectName)\Models"  "$(TargetDir)Models"   /y /r /s /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -216,6 +228,7 @@ xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
     <ClCompile Include="Keyboard\KeyboardEvent.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Graphics\Model.cpp" />
     <ClCompile Include="Mouse\MouseProcessor.cpp" />
     <ClCompile Include="Mouse\MouseClass.cpp" />
     <ClCompile Include="Mouse\MouseEvent.cpp" />
@@ -241,6 +254,7 @@ xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     <ClInclude Include="Keyboard\KeyboardProcessor.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />
     <ClInclude Include="Keyboard\KeyboardEvent.h" />
+    <ClInclude Include="Graphics\Model.h" />
     <ClInclude Include="Mouse\MouseProcessor.h" />
     <ClInclude Include="Mouse\MouseClass.h" />
     <ClInclude Include="Mouse\MouseEvent.h" />
@@ -251,6 +265,7 @@ xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="StringConverter.h" />
     <ClInclude Include="Graphics\Vertex.h" />
+    <ClInclude Include="tiny_gltf.h" />
     <ClInclude Include="WindowContainer.h" />
     <ClInclude Include="WinErrorLoger.h" />
     <ClInclude Include="Graphics\WorldCameraPosition.h" />
@@ -297,6 +312,42 @@ xcopy "$(SolutionDir)$(ProjectName)\*.hdr"  "$(TargetDir)"   /y /r</Command>
     <None Include="common_ibl_shader_func.fx">
       <FileType>Document</FileType>
     </None>
+    <FxCompile Include="model_emissive_pixel_shader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="model_pixel_shader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="model_shader_common.fx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="model_vertex_shader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
     <FxCompile Include="preintegrated_brdf_pixel_shader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
