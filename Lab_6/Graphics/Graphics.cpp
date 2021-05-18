@@ -1107,7 +1107,7 @@ bool Graphics::load_model()
 	m_model.SetEmissivePixelShaderPath(L"model_emissive_pixel_shader.cso");
 	m_model.SetScale(3.0f);
 	m_model.SetPosition(0.0f, -5.0f, -5.0f);
-	m_model.SetRotation(DirectX::XM_PI * 0.0f, DirectX::XM_PI * 0.25f, DirectX::XM_PI * 0.0f);
+	m_model.SetRotation(DirectX::XM_PI * 0.0f, DirectX::XM_PI * (-0.25f), DirectX::XM_PI * 0.0f);
 	if (!m_model.Load(m_device_ptr, "Models/test_tube_rack/scene.gltf"))
 	{
 		return false;
